@@ -16,3 +16,6 @@ __pycache__/
 
 # Environment
 .env
+
+# Generated figures (user-local, created by /paper-illustration and /paper-figure)
+figures/
