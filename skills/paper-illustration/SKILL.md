@@ -70,7 +70,9 @@ Generate publication-quality illustrations using a **multi-stage workflow** with
 - **MAX_ITERATIONS = 5** — Maximum refinement rounds
 - **TARGET_SCORE = 9** — Minimum acceptable score (1-10) — RAISED FOR QUALITY
 - **OUTPUT_DIR = `figures/ai_generated/`** — Output directory
-- **API_KEY_ENV = `GEMINI_API_KEY`** — Environment variable
+- **API_KEY_ENV = `BIANXIE_API_KEY` (primary) or `GEMINI_API_KEY` (fallback)** — Environment variable
+- **BIANXIE_API_URL = `https://api.bianxie.ai/v1/chat/completions`** — bianxie.ai OpenAI-compatible endpoint
+- **GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/`** — Google native Gemini endpoint
 
 ## CVPR/ICLR/NeurIPS Top-Tier Conference Style Guide
 
@@ -158,16 +160,184 @@ Generate publication-quality illustrations using a **multi-stage workflow** with
 ### Step 0: Pre-flight Check
 
 ```bash
-# Check API key
-if [ -z "$GEMINI_API_KEY" ]; then
-    echo "ERROR: GEMINI_API_KEY not set"
-    echo "Get your key from: https://aistudio.google.com/app/apikey"
-    echo "Set it: export GEMINI_API_KEY='your-key'"
+# Check API keys (bianxie.ai preferred, GEMINI fallback)
+if [ -n "$BIANXIE_API_KEY" ]; then
+    echo "✅ Using bianxie.ai API (OpenAI-compatible)"
+elif [ -n "$GEMINI_API_KEY" ]; then
+    echo "✅ Using Google native Gemini API"
+else
+    echo "ERROR: No API key found"
+    echo "Option 1 (recommended): export BIANXIE_API_KEY='sk-xxx'  (bianxie.ai)"
+    echo "Option 2: export GEMINI_API_KEY='your-key'  (Google native)"
+    echo "Get bianxie.ai key from: https://bianxie.ai"
+    echo "Get Gemini key from: https://aistudio.google.com/app/apikey"
     exit 1
 fi
 
 # Create output directory
 mkdir -p figures/ai_generated
+
+# Create unified API helper script (supports both backends)
+cat > /tmp/gemini_api_helper.py << 'PYEOF'
+#!/usr/bin/env python3
+"""Unified API helper for Gemini via bianxie.ai (OpenAI-compatible) or Google native."""
+import json, sys, os, urllib.request, re, base64, argparse
+
+def get_backend():
+    if os.environ.get("BIANXIE_API_KEY"):
+        return "bianxie"
+    elif os.environ.get("GEMINI_API_KEY"):
+        return "gemini"
+    else:
+        raise RuntimeError("No API key found (BIANXIE_API_KEY or GEMINI_API_KEY)")
+
+def call_text_api(prompt, model="gemini-3-pro-preview"):
+    """Call text-only API (Steps 2 and 3). Returns response text."""
+    backend = get_backend()
+    if backend == "bianxie":
+        url = "https://api.bianxie.ai/v1/chat/completions"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {os.environ['BIANXIE_API_KEY']}"
+        }
+        payload = {"model": model, "messages": [{"role": "user", "content": prompt}], "stream": False}
+        data = json.dumps(payload).encode()
+        req = urllib.request.Request(url, data=data, headers=headers)
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            result = json.loads(resp.read().decode())
+        return result["choices"][0]["message"]["content"]
+    else:
+        api_key = os.environ["GEMINI_API_KEY"]
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        headers = {"Content-Type": "application/json"}
+        payload = {"contents": [{"parts": [{"text": prompt}]}]}
+        data = json.dumps(payload).encode()
+        req = urllib.request.Request(url, data=data, headers=headers)
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            result = json.loads(resp.read().decode())
+        return result["candidates"][0]["content"]["parts"][0]["text"]
+
+def call_image_api(prompt, model="gemini-3-pro-image-preview", output_dir="figures/ai_generated", iteration=1):
+    """Call image generation API (Step 4). Returns path to saved image."""
+    backend = get_backend()
+    if backend == "bianxie":
+        return _call_image_bianxie(prompt, model, output_dir, iteration)
+    else:
+        return _call_image_gemini(prompt, model, output_dir, iteration)
+
+def _call_image_gemini(prompt, model, output_dir, iteration):
+    """Google native Gemini image API."""
+    api_key = os.environ["GEMINI_API_KEY"]
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]}
+    }
+    data = json.dumps(payload).encode()
+    req = urllib.request.Request(url, data=data, headers=headers)
+    with urllib.request.urlopen(req, timeout=180) as resp:
+        result = json.loads(resp.read().decode())
+    parts = result["candidates"][0]["content"]["parts"]
+    img_path = None
+    for part in parts:
+        if "text" in part:
+            print(f"\n[Paperbanana]: {part['text'][:200]}...")
+        elif "inlineData" in part:
+            img_data = base64.b64decode(part["inlineData"]["data"])
+            img_path = os.path.join(output_dir, f"figure_v{iteration}.png")
+            with open(img_path, "wb") as f:
+                f.write(img_data)
+            print(f"\n✅ Image saved: {img_path}")
+            print(f"   Size: {len(img_data)/1024:.1f} KB")
+    return img_path
+
+def _call_image_bianxie(prompt, model, output_dir, iteration):
+    """bianxie.ai streaming image API. Parses SSE for base64 image data."""
+    import http.client, urllib.parse
+    api_key = os.environ["BIANXIE_API_KEY"]
+    url_parts = urllib.parse.urlparse("https://api.bianxie.ai/v1/chat/completions")
+    payload = json.dumps({
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        "stream": True
+    })
+    conn = http.client.HTTPSConnection(url_parts.hostname, timeout=180)
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
+    conn.request("POST", url_parts.path, body=payload, headers=headers)
+    response = conn.getresponse()
+    if response.status != 200:
+        raise RuntimeError(f"API error {response.status}: {response.read().decode()}")
+    # Accumulate all SSE chunks
+    full_content = ""
+    for line in response:
+        line = line.decode("utf-8").strip()
+        if not line.startswith("data: "):
+            continue
+        data_str = line[6:]
+        if data_str == "[DONE]":
+            break
+        try:
+            chunk = json.loads(data_str)
+            choices = chunk.get("choices", [])
+            if not choices:
+                continue
+            delta = choices[0].get("delta", {})
+            content = delta.get("content", "")
+            if content:
+                full_content += content
+        except (json.JSONDecodeError, IndexError, KeyError):
+            continue
+    conn.close()
+    # Extract base64 image from markdown: ![image](data:image/png;base64,...)
+    pattern = r'!\[.*?\]\(data:image/(png|jpeg|jpg|webp);base64,([A-Za-z0-9+/=\s]+)\)'
+    match = re.search(pattern, full_content, re.DOTALL)
+    if match:
+        img_format = match.group(1)
+        b64_data = match.group(2).replace("\n", "").replace("\r", "").replace(" ", "")
+        img_data = base64.b64decode(b64_data)
+        ext = "png" if img_format == "png" else img_format
+        img_path = os.path.join(output_dir, f"figure_v{iteration}.{ext}")
+        with open(img_path, "wb") as f:
+            f.write(img_data)
+        print(f"\n✅ Image saved: {img_path}")
+        print(f"   Size: {len(img_data)/1024:.1f} KB")
+        text_before = full_content[:match.start()].strip()
+        if text_before:
+            print(f"\n[Paperbanana]: {text_before[:200]}...")
+        return img_path
+    else:
+        debug_path = os.path.join(output_dir, f"debug_response_v{iteration}.txt")
+        with open(debug_path, "w") as f:
+            f.write(full_content)
+        print(f"❌ No image found in bianxie.ai response")
+        print(f"   Response saved to: {debug_path}")
+        print(f"   Content length: {len(full_content)} chars")
+        print(f"   First 500 chars: {full_content[:500]}")
+        return None
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("mode", choices=["text", "image"])
+    parser.add_argument("--prompt-file", required=True)
+    parser.add_argument("--model", default=None)
+    parser.add_argument("--output-dir", default="figures/ai_generated")
+    parser.add_argument("--iteration", type=int, default=1)
+    args = parser.parse_args()
+    with open(args.prompt_file, "r") as f:
+        prompt = f.read()
+    if args.mode == "text":
+        model = args.model or "gemini-3-pro-preview"
+        result = call_text_api(prompt, model)
+        print(result)
+    elif args.mode == "image":
+        model = args.model or "gemini-3-pro-image-preview"
+        result = call_image_api(prompt, model, args.output_dir, args.iteration)
+        if result is None:
+            sys.exit(1)
+PYEOF
+
+echo "✅ API helper created at /tmp/gemini_api_helper.py"
 ```
 
 ### Step 1: Claude Plans the Figure (YOU ARE HERE)
@@ -273,20 +443,19 @@ VERIFY: Each arrow must point to the CORRECT target!
 #!/bin/bash
 # Step 2: Optimize layout using Gemini gemini-3-pro
 # This step refines component positioning and spacing
+# Supports both bianxie.ai (OpenAI-compatible) and Google native Gemini API
 
 set -e
 
 OUTPUT_DIR="figures/ai_generated"
 mkdir -p "$OUTPUT_DIR"
 
-API_KEY="${GEMINI_API_KEY}"
-URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=$API_KEY"
-
 # The initial prompt from Claude
 INITIAL_PROMPT='[Claude fills in the detailed prompt here]'
 
-# Layout optimization request
-LAYOUT_REQUEST="You are an expert in academic figure layout design for CVPR/NeurIPS papers.
+# Write layout optimization request to temp file
+cat > /tmp/gemini_layout_prompt.txt << PROMPTEOF
+You are an expert in academic figure layout design for CVPR/NeurIPS papers.
 
 Analyze this figure request and provide an OPTIMIZED LAYOUT DESCRIPTION:
 
@@ -299,34 +468,13 @@ Provide:
 4. **Arrow Routing**: Optimal paths for arrows to avoid crossings
 5. **Visual Hierarchy**: Size recommendations for main vs sub-components
 
-Output a DETAILED layout specification that will be used for rendering."
+Output a DETAILED layout specification that will be used for rendering.
+PROMPTEOF
 
-# Build JSON payload
-python3 << PYTHON
-import json
-payload = {
-    "contents": [{"parts": [{"text": '''$LAYOUT_REQUEST'''}]}]
-}
-with open("/tmp/gemini_layout_request.json", "w") as f:
-    json.dump(payload, f, indent=2)
-print("Layout request created")
-PYTHON
-
-# Call Gemini gemini-3-pro-preview for layout optimization (DIRECT connection, no proxy)
-RESPONSE=$(curl -s --max-time 90 \
-  -X POST "$URL" \
-  -H 'Content-Type: application/json' \
-  -d @/tmp/gemini_layout_request.json)
-
-# Extract layout description
-LAYOUT_DESCRIPTION=$(echo "$RESPONSE" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-try:
-    print(data['candidates'][0]['content']['parts'][0]['text'])
-except:
-    print('Error extracting layout')
-")
+# Call API (auto-detects bianxie.ai or Google native)
+LAYOUT_DESCRIPTION=$(python3 /tmp/gemini_api_helper.py text \
+    --prompt-file /tmp/gemini_layout_prompt.txt \
+    --model gemini-3-pro-preview)
 
 echo "=== Layout Optimization Complete ==="
 echo "$LAYOUT_DESCRIPTION"
@@ -340,15 +488,16 @@ echo "$LAYOUT_DESCRIPTION" > "$OUTPUT_DIR/layout_description.txt"
 ```bash
 #!/bin/bash
 # Step 3: Verify and enhance style compliance using Gemini gemini-3-pro
+# Supports both bianxie.ai (OpenAI-compatible) and Google native Gemini API
 
-API_KEY="${GEMINI_API_KEY}"
-URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=$API_KEY"
+set -e
 
 # Read layout from previous step
 LAYOUT=$(cat figures/ai_generated/layout_description.txt)
 
-# Style verification request
-STYLE_REQUEST="You are a CVPR/NeurIPS paper figure reviewer specializing in visual standards.
+# Write style verification request to temp file
+cat > /tmp/gemini_style_prompt.txt << PROMPTEOF
+You are a CVPR/NeurIPS paper figure reviewer specializing in visual standards.
 
 Review and ENHANCE this figure specification for top-tier conference compliance:
 
@@ -362,34 +511,13 @@ Ensure compliance with:
    - ✅ Subtle same-color gradients, rounded corners (6-10px), internal structure visible
    - ❌ NO heavy shadows, NO glowing effects, NO rainbow gradients
 
-Output an ENHANCED figure specification with explicit style instructions for rendering."
+Output an ENHANCED figure specification with explicit style instructions for rendering.
+PROMPTEOF
 
-# Build JSON payload
-python3 << PYTHON
-import json
-payload = {
-    "contents": [{"parts": [{"text": '''$STYLE_REQUEST'''}]}]
-}
-with open("/tmp/gemini_style_request.json", "w") as f:
-    json.dump(payload, f, indent=2)
-print("Style request created")
-PYTHON
-
-# Call Gemini gemini-3-pro-preview for style verification (DIRECT connection, no proxy)
-RESPONSE=$(curl -s --max-time 90 \
-  -X POST "$URL" \
-  -H 'Content-Type: application/json' \
-  -d @/tmp/gemini_style_request.json)
-
-# Extract style-enhanced specification
-STYLE_SPEC=$(echo "$RESPONSE" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-try:
-    print(data['candidates'][0]['content']['parts'][0]['text'])
-except:
-    print('Error extracting style spec')
-")
+# Call API (auto-detects bianxie.ai or Google native)
+STYLE_SPEC=$(python3 /tmp/gemini_api_helper.py text \
+    --prompt-file /tmp/gemini_style_prompt.txt \
+    --model gemini-3-pro-preview)
 
 echo "=== Style Verification Complete ==="
 echo "$STYLE_SPEC"
@@ -404,21 +532,19 @@ echo "$STYLE_SPEC" > "figures/ai_generated/style_spec.txt"
 #!/bin/bash
 # Step 4: Render image using Paperbanana (gemini-3-pro-image-preview)
 # Internal codename: Nano Banana Pro
-# Use DIRECT connection (no proxy) - proxy causes SSL errors
+# Supports both bianxie.ai (streaming SSE) and Google native (JSON inlineData)
 
 set -e
 
 OUTPUT_DIR="figures/ai_generated"
 mkdir -p "$OUTPUT_DIR"
 
-API_KEY="${GEMINI_API_KEY}"
-URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=$API_KEY"
-
 # Read the style-enhanced specification from previous step
 STYLE_SPEC=$(cat figures/ai_generated/style_spec.txt)
 
-# Add rendering instructions
-RENDER_PROMPT="Render a publication-quality academic diagram based on this specification:
+# Write rendering request to temp file
+cat > /tmp/gemini_render_prompt.txt << PROMPTEOF
+Render a publication-quality academic diagram based on this specification:
 
 $STYLE_SPEC
 
@@ -426,60 +552,22 @@ RENDERING REQUIREMENTS:
 - Output a clean, professional diagram suitable for CVPR/NeurIPS submission
 - Use vector-quality rendering with sharp edges and clear text
 - Ensure all elements are properly aligned and spaced
-- The diagram should be immediately understandable at a glance"
+- The diagram should be immediately understandable at a glance
+PROMPTEOF
 
-# Build JSON payload using Python for proper escaping
-python3 << PYTHON
-import json
-payload = {
-    "contents": [{"parts": [{"text": '''$RENDER_PROMPT'''}]}],
-    "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]}
-}
-with open("/tmp/gemini_request.json", "w") as f:
-    json.dump(payload, f, indent=2)
-print("JSON payload created")
-PYTHON
+# Call image API (auto-detects bianxie.ai or Google native)
+python3 /tmp/gemini_api_helper.py image \
+    --prompt-file /tmp/gemini_render_prompt.txt \
+    --model gemini-3-pro-image-preview \
+    --output-dir "$OUTPUT_DIR" \
+    --iteration 1
 
-# Call Paperbanana API WITHOUT proxy (direct connection works better)
-RESPONSE=$(curl -s --max-time 180 \
-  -X POST "$URL" \
-  -H 'Content-Type: application/json' \
-  -d @/tmp/gemini_request.json)
-
-# Check for error
-if echo "$RESPONSE" | grep -q '"error"'; then
-    echo "API Error:"
-    echo "$RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$RESPONSE"
+# Check result
+if [ $? -ne 0 ]; then
+    echo "ERROR: Image generation failed"
+    echo "Check debug output in $OUTPUT_DIR/debug_response_v1.txt"
     exit 1
 fi
-
-# Extract and save image
-echo "$RESPONSE" | python3 << 'PYTHON'
-import sys, json, base64
-from pathlib import Path
-
-output_dir = Path("figures/ai_generated")
-data = json.load(sys.stdin)
-
-try:
-    parts = data['candidates'][0]['content']['parts']
-    iteration = 1  # Claude increments this each iteration
-
-    for part in parts:
-        if 'text' in part:
-            print(f"\n[Paperbanana]: {part['text'][:200]}...")
-        elif 'inlineData' in part:
-            img_data = base64.b64decode(part['inlineData']['data'])
-            img_path = output_dir / f"figure_v{iteration}.png"
-            with open(img_path, "wb") as f:
-                f.write(img_data)
-            print(f"\n✅ Image saved: {img_path}")
-            print(f"   Size: {len(img_data)/1024:.1f} KB")
-
-except Exception as e:
-    print(f"Parse error: {e}")
-    print(f"Raw response: {str(data)[:500]}")
-PYTHON
 ```
 
 ### Step 5: Claude STRICT Visual Review & Scoring (MANDATORY)
@@ -690,3 +778,10 @@ figures/ai_generated/
 | Step 3 | gemini-3-pro | CVPR/NeurIPS style verification |
 | Step 4 | gemini-3-pro-image-preview (Paperbanana) | High-quality image rendering |
 | Step 5 | Claude | STRICT visual review and scoring |
+
+## API Backend Support
+
+| Backend | Env Variable | Format | Notes |
+|---------|-------------|--------|-------|
+| **bianxie.ai** (primary) | `BIANXIE_API_KEY` | OpenAI chat/completions | Recommended for China users |
+| **Google native** (fallback) | `GEMINI_API_KEY` | Google Generative Language API | Requires paid plan for image generation |
