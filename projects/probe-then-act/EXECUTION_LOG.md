@@ -12,21 +12,26 @@
 | 2026-04-03 | Phase 0.4: ARIS inputs | DONE | RESEARCH_BRIEF.md, CLAUDE.md created |
 | 2026-04-03 | Phase 1.1: Code scaffold | DONE | 126 .py + 22 .yaml files |
 | 2026-04-04 | Phase 1.2: Genesis env | DONE | ScoopTransfer: 100 steps, 0 NaN, 400 particles |
-| 2026-04-04 | Phase 1.3: Scripted baselines | IN PROGRESS | run_scripted_baseline.py implementing |
-| 2026-04-04 | Phase 2: Training infra | IN PROGRESS | PPO + SB3 training pipeline |
+| 2026-04-04 | Phase 1.3: Scripted baselines | DONE | run_scripted_baseline.py (396 lines) |
+| 2026-04-04 | Phase 2: Training infra | DONE | PPO/RNN-PPO/DomainRand CLI, SB3 pipeline |
+| 2026-04-04 | Phase 2.1: M1 Reactive PPO | TRAINING | 50K steps, checkpoint at 5K |
 | 2026-04-04 | Phase 2.6: EXPERIMENT_PLAN | DONE | refine-logs/EXPERIMENT_PLAN.md written |
+| 2026-04-04 | Week 1 Deliverable | DONE | docs/Week1_environment_bootstrap.md |
 
 ## Git Log (probe-then-act)
 
 ```
+7887c0f feat: multi-method training CLI (M1/M2/M3)
+2ac498f docs: Week 1 deliverable
+74bab69 feat: training infrastructure + scripted baselines
 5591394 chore: add README.md and requirements.txt
-7aa7bf0 docs: add claim-driven experiment plan for ARIS /experiment-bridge
-fed0d79 feat: implement working Scoop-and-Transfer Genesis environment
-c6e7406 chore: add .gitignore and remove pycache from tracking
-0f728ff feat: scaffold full pta/ package structure (126 Python + 22 YAML files)
-c7c5792 docs: add novelty check and literature survey report
-40dbfa3 chore: add ARIS input files (RESEARCH_BRIEF.md, CLAUDE.md)
-5308fb5 docs: initial project documentation
+7aa7bf0 docs: experiment plan for ARIS
+fed0d79 feat: working Genesis environment (PASSED)
+c6e7406 chore: .gitignore
+0f728ff feat: scaffold (126 .py + 22 .yaml)
+c7c5792 docs: novelty check report
+40dbfa3 chore: ARIS input files
+5308fb5 docs: initial documentation
 ```
 
 ## File Count
