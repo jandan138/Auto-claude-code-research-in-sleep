@@ -14,13 +14,15 @@
 | 2026-04-04 | Phase 1.2: Genesis env | DONE | ScoopTransfer: 100 steps, 0 NaN, 400 particles |
 | 2026-04-04 | Phase 1.3: Scripted baselines | DONE | run_scripted_baseline.py (396 lines) |
 | 2026-04-04 | Phase 2: Training infra | DONE | PPO/RNN-PPO/DomainRand CLI, SB3 pipeline |
-| 2026-04-04 | Phase 2.1: M1 Reactive PPO | TRAINING | 50K steps, checkpoint at 5K |
+| 2026-04-04 | Phase 2.1: M1 Reactive PPO | TRAINING v2 | Fixed env, 100K steps running (~50 min) |
+| 2026-04-04 | BLOCKER FIX | DONE | AABB z=0, action_scale 0.05, horizon 500, reward shaping |
 | 2026-04-04 | Phase 2.6: EXPERIMENT_PLAN | DONE | refine-logs/EXPERIMENT_PLAN.md written |
 | 2026-04-04 | Week 1 Deliverable | DONE | docs/Week1_environment_bootstrap.md |
 
 ## Git Log (probe-then-act)
 
 ```
+bcc1ea3 fix: resolve AABB z-range and action scale blockers
 7887c0f feat: multi-method training CLI (M1/M2/M3)
 2ac498f docs: Week 1 deliverable
 74bab69 feat: training infrastructure + scripted baselines
