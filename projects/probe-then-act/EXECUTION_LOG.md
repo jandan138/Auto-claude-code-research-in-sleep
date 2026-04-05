@@ -28,6 +28,9 @@
 | 2026-04-05 | Phase 3.0: Eval infrastructure | DONE | split loaders + eval_policy + eval_ood + CLI |
 | 2026-04-05 | Phase 3.1: OOD eval (horizon fix) | DONE | Aligned eval horizon=200 with training |
 | 2026-04-05 | Phase 3.2: Full OOD evaluation | DONE | 5 methods x 7 materials x 10 episodes |
+| 2026-04-05 | Phase 3.3: M1 Gate FAILED | BLOCKER | 0% success at 500K — reward shaping needed |
+| 2026-04-05 | Phase 3.4: Staged reward shaping | DONE | 4-phase reward: approach→scoop→lift→transfer |
+| 2026-04-05 | Phase 3.5: Teacher v2 (2M steps) | IN PROGRESS | PID 1008295, staged reward, checkpoint every 100K |
 
 ## Git Log (probe-then-act)
 
