@@ -36,34 +36,74 @@
 | 2026-04-06 | **BLOCKER: Physical feasibility** | CRITICAL | Parallel-jaw gripper cannot scoop — need custom scoop tool |
 | 2026-04-06 | M1 Pivot Plan | DONE | refine-logs/M1_FAILED_PIVOT_PLAN.md |
 
-## Phase 4: M1 Pivot — Scoop Tool + Training Redesign
+## Phase 4: M1 Pivot — Edge-Push Task Redesign
 
 > **Canonical plan**: `refine-logs/M1_FAILED_PIVOT_PLAN.md`
-> **Research basis**: `refine-logs/LITERATURE_RESEARCH_REPORT.md`
+> **Validation gates**: `docs/04_VALIDATION_GATES.md`
+> **Tiny-task protocol**: `docs/05_TINY_TASK_OVERFIT_PROTOCOL.md`
 
-**Core principle**: Stop treating this as a reward-tuning problem. Treat it as a feasibility + task-definition problem.
+**Core pivot**: Scoop-lift-dump infeasible in Genesis MPM (particles don't adhere to rigid scoop during traverse). Redesigned as **edge-push task**: elevated platform + scoop pushes particles off +y edge into target below.
 
-### Gate G1 — Physical Feasibility (must pass before any RL)
+### Gate 0 — Physical Feasibility: **PASSED** (2026-04-06)
+| Step | Task | Status | Result |
+|------|------|--------|--------|
+| 4.0 | Design scoop MJCF (panda_scoop.xml, 7-DOF) | **DONE** | DOF=7, scoop link OK, no NaN |
+| 4.0b | Scoop-lift-dump feasibility testing | **FAILED** | MPM particles cannot adhere during traverse |
+| 4.0c | Edge-push task layout design + integration | **DONE** | Elevated platform + target below edge |
+| 4.1 | Scripted edge-push → verify transfer | **DONE** | **42.2% transfer, 9.0% spill, 5/5 repeatable** |
+| 4.2 | Freeze sand-only tiny-task config | **DONE** | configs/overfit/sand_tiny_task.yaml |
+
+**Gate 0 metrics (Sequence E, 5 episodes):**
+```
+transfer_efficiency: 0.4221 ± 0.0006  (threshold: ≥0.30) ✓
+spill_ratio:         0.0902 ± 0.0004  (threshold: ≤0.20) ✓
+repeatability:       5/5 consistent   (threshold: ≥2)     ✓
+NaN/crash:           0               (threshold: 0)       ✓
+```
+
+### Gate 0 Key Findings
+1. **MPM grid_density=128** required (64 too coarse for scoop-particle coupling)
+2. **Scoop captures 146 particles** at LIFT_LOW but **all fall off during traverse** (any method: IK, joint-space, PD)
+3. **Root cause**: MPM rigid-particle coupling = friction only, no adhesion. Horizontal acceleration > friction cone → spill
+4. **Edge-push works** because gravity does the transfer (particles fall off platform edge)
+
+### Steps 4.3–4.6 — Training Infrastructure: **DONE** (2026-04-06)
 | Step | Task | Status |
 |------|------|--------|
-| 4.0 | Design scoop end-effector URDF/MJCF, attach to Franka link 7 | PENDING |
-| 4.1 | Scripted scoop trajectory → verify non-zero lifted/transferred mass | PENDING |
-| 4.2 | Freeze sand-only mainline env, drop liquid from core track | PENDING |
+| 4.3 | ReducedActionWrapper (7D → 3D position-only) | **DONE** |
+| 4.4 | ActionRepeatWrapper (repeat=25, policy@20Hz) | **DONE** |
+| 4.5 | PPO fix (ent_coef=0.0, use_sde=True, log_std_init=-1.0) | **DONE** |
+| 4.6 | Reward rebalance for edge-push | **DONE** |
+| 4.6b | GymWrapper auto obs_dim detection | **DONE** |
+| 4.6c | train_teacher.py wrapper stack support | **DONE** |
 
-### Gate G2 — Learnability (only after G1 passes)
+**Reward structure (edge-push):**
+```
+approach:  -0.01 * dist_to_source     (guidance only)
+push:       2.0 * mean_particle_y_progress
+transfer:  10.0 * transfer_frac       (dominant)
+spill:     -1.0 * spill_frac
+success:   50.0 at ≥30% transfer
+```
+
+### Gate 4 — Tiny-Task Overfit: **PENDING** (next)
 | Step | Task | Status |
 |------|------|--------|
-| 4.3 | Reduce action space 7D → 3D position + phase-dependent orientation | PENDING |
-| 4.4 | Add action repeat (policy 20Hz, physics 500Hz) | PENDING |
-| 4.5 | Fix PPO (ent_coef=0.0, use_sde=True, log_std_init=-1.0) | PENDING |
-| 4.6 | Rebalance reward (approach ≪ scoop ≪ transfer) | PENDING |
 | 4.7 | Residual policy learning (scripted base + RL corrections) | PENDING |
-| 4.8 | Train Teacher v3 → pass G2: beats scripted baseline | PENDING |
-| 4.9 | Re-evaluate M1 decision gate | PENDING |
+| 4.8 | E1: Teacher overfit on edge-push tiny task | PENDING |
+| 4.8b | E2: Residual overfit (if E1 fails) | PENDING |
+| 4.9 | Re-evaluate: success_rate ≥ 70%, transferred ≥ 25% | PENDING |
 
 ## Git Log (probe-then-act)
 
 ```
+ce5b9e8 feat: reward rebalance for edge-push + PPO fixes (ent=0, SDE)
+703b26d feat: Gate 0 PASSED — edge-push task with scoop tool (42.2% transfer)
+d50d244 docs: add validation gates + tiny-task protocol, renumber 05→06
+c7eb0bb docs: add M1 pivot plan — feasibility-first redesign
+2bc61ca fix: align eval horizon with training (pass task_config)
+ec040c3 docs: literature research report — 5-agent parallel investigation
+9ec22a6 feat: staged reward shaping for scoop-transfer
 787f7a4 feat: GPU utilization optimization for training pipeline
 5c12cf2 feat: add privileged observations for M8 Teacher
 87409bf feat: add M8 Teacher training resume script
@@ -87,10 +127,10 @@ c7c5792 docs: novelty check report
 
 | Category | Count |
 |----------|-------|
-| Python (.py) | 126 |
-| YAML (.yaml) | 22 |
-| Markdown (.md) | 10 |
-| CSV (.csv) | 1 |
+| Python (.py) | 129 |
+| YAML (.yaml) | 23 |
+| Markdown (.md) | 12 |
+| CSV (.csv) | 2 |
 
 ## Environment Verification
 
