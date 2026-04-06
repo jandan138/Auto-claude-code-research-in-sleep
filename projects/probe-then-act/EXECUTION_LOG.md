@@ -32,7 +32,22 @@
 | 2026-04-05 | Phase 3.4: Staged reward shaping | DONE | 4-phase reward: approach→scoop→lift→transfer |
 | 2026-04-05→06 | Phase 3.5: Teacher v2 (2M steps) | STOPPED | 981K/2M, best=-6.81@230K, plateau 750K steps |
 | 2026-04-06 | Phase 3.5 Diagnosis | BLOCKER | Approach-only local optimum; entropy divergence (std 1→2.1); 0% success |
-| 2026-04-06 | Phase 3.6: Multi-angle literature research | IN PROGRESS | Parallel agents investigating solutions |
+| 2026-04-06 | Phase 3.6: Multi-angle literature research | DONE | 5 agents, report: refine-logs/LITERATURE_RESEARCH_REPORT.md |
+| 2026-04-06 | **BLOCKER: Physical feasibility** | CRITICAL | Parallel-jaw gripper cannot scoop — need custom scoop tool |
+
+## Next Steps (Phase 4: Scoop Tool + Training Redesign)
+
+Per `refine-logs/LITERATURE_RESEARCH_REPORT.md`, the following must happen before more RL training:
+
+1. **Phase 4.0**: Design scoop end-effector URDF/MJCF, attach to Franka link 7
+2. **Phase 4.1**: Verify physical feasibility with scripted trajectory
+3. **Phase 4.2**: Reduce action space 7D → 3D position + phase-dependent orientation
+4. **Phase 4.3**: Add action repeat (policy 20Hz, physics 500Hz)
+5. **Phase 4.4**: Fix PPO (ent_coef=0.0, use_sde=True, log_std_init=-1.0)
+6. **Phase 4.5**: Rebalance reward (approach -0.01, scoop 3.0, lift 5.0, transfer 10.0)
+7. **Phase 4.6**: Implement residual policy learning (scripted base + RL corrections)
+8. **Phase 4.7**: Train Teacher v3
+9. **Phase 4.8**: Re-evaluate M1 decision gate
 
 ## Git Log (probe-then-act)
 
