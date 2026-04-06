@@ -34,20 +34,32 @@
 | 2026-04-06 | Phase 3.5 Diagnosis | BLOCKER | Approach-only local optimum; entropy divergence (std 1→2.1); 0% success |
 | 2026-04-06 | Phase 3.6: Multi-angle literature research | DONE | 5 agents, report: refine-logs/LITERATURE_RESEARCH_REPORT.md |
 | 2026-04-06 | **BLOCKER: Physical feasibility** | CRITICAL | Parallel-jaw gripper cannot scoop — need custom scoop tool |
+| 2026-04-06 | M1 Pivot Plan | DONE | refine-logs/M1_FAILED_PIVOT_PLAN.md |
 
-## Next Steps (Phase 4: Scoop Tool + Training Redesign)
+## Phase 4: M1 Pivot — Scoop Tool + Training Redesign
 
-Per `refine-logs/LITERATURE_RESEARCH_REPORT.md`, the following must happen before more RL training:
+> **Canonical plan**: `refine-logs/M1_FAILED_PIVOT_PLAN.md`
+> **Research basis**: `refine-logs/LITERATURE_RESEARCH_REPORT.md`
 
-1. **Phase 4.0**: Design scoop end-effector URDF/MJCF, attach to Franka link 7
-2. **Phase 4.1**: Verify physical feasibility with scripted trajectory
-3. **Phase 4.2**: Reduce action space 7D → 3D position + phase-dependent orientation
-4. **Phase 4.3**: Add action repeat (policy 20Hz, physics 500Hz)
-5. **Phase 4.4**: Fix PPO (ent_coef=0.0, use_sde=True, log_std_init=-1.0)
-6. **Phase 4.5**: Rebalance reward (approach -0.01, scoop 3.0, lift 5.0, transfer 10.0)
-7. **Phase 4.6**: Implement residual policy learning (scripted base + RL corrections)
-8. **Phase 4.7**: Train Teacher v3
-9. **Phase 4.8**: Re-evaluate M1 decision gate
+**Core principle**: Stop treating this as a reward-tuning problem. Treat it as a feasibility + task-definition problem.
+
+### Gate G1 — Physical Feasibility (must pass before any RL)
+| Step | Task | Status |
+|------|------|--------|
+| 4.0 | Design scoop end-effector URDF/MJCF, attach to Franka link 7 | PENDING |
+| 4.1 | Scripted scoop trajectory → verify non-zero lifted/transferred mass | PENDING |
+| 4.2 | Freeze sand-only mainline env, drop liquid from core track | PENDING |
+
+### Gate G2 — Learnability (only after G1 passes)
+| Step | Task | Status |
+|------|------|--------|
+| 4.3 | Reduce action space 7D → 3D position + phase-dependent orientation | PENDING |
+| 4.4 | Add action repeat (policy 20Hz, physics 500Hz) | PENDING |
+| 4.5 | Fix PPO (ent_coef=0.0, use_sde=True, log_std_init=-1.0) | PENDING |
+| 4.6 | Rebalance reward (approach ≪ scoop ≪ transfer) | PENDING |
+| 4.7 | Residual policy learning (scripted base + RL corrections) | PENDING |
+| 4.8 | Train Teacher v3 → pass G2: beats scripted baseline | PENDING |
+| 4.9 | Re-evaluate M1 decision gate | PENDING |
 
 ## Git Log (probe-then-act)
 
