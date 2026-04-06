@@ -30,7 +30,9 @@
 | 2026-04-05 | Phase 3.2: Full OOD evaluation | DONE | 5 methods x 7 materials x 10 episodes |
 | 2026-04-05 | Phase 3.3: M1 Gate FAILED | BLOCKER | 0% success at 500K — reward shaping needed |
 | 2026-04-05 | Phase 3.4: Staged reward shaping | DONE | 4-phase reward: approach→scoop→lift→transfer |
-| 2026-04-05 | Phase 3.5: Teacher v2 (2M steps) | IN PROGRESS | PID 1008295, staged reward, checkpoint every 100K |
+| 2026-04-05→06 | Phase 3.5: Teacher v2 (2M steps) | STOPPED | 981K/2M, best=-6.81@230K, plateau 750K steps |
+| 2026-04-06 | Phase 3.5 Diagnosis | BLOCKER | Approach-only local optimum; entropy divergence (std 1→2.1); 0% success |
+| 2026-04-06 | Phase 3.6: Multi-angle literature research | IN PROGRESS | Parallel agents investigating solutions |
 
 ## Git Log (probe-then-act)
 
@@ -177,3 +179,40 @@ sb3-contrib: 2.8.0 (RecurrentPPO)
 - **Teacher underperforms M4** — privileged obs not helping at this training stage
 - **Spill=0.741 on liquid is deterministic**: liquid flows out by gravity, robot barely moves
 - **Next step**: Extend training to 2M-10M steps + staged reward shaping
+
+## Phase 3.5: Teacher v2 Training — Post-Mortem
+
+### Setup
+- **Method**: Teacher PPO with privileged obs (44-D), staged reward shaping
+- **Staged reward**: approach(-0.1*dist) + scoop(0.3*depth) + lift(0.5*n_lifted/total) + transfer(1.0*frac) + carry(-0.05*dist_target)
+- **Hyperparams**: lr=3e-4, n_steps=128, batch=64, n_epochs=10, ent_coef=0.01, horizon=200
+- **Total steps run**: 981K / 2M (stopped early)
+- **Runtime**: ~9 hours, ~19 FPS
+
+### Learning Curve
+| Steps | Eval Reward | std | Phase |
+|-------|-------------|-----|-------|
+| 0-100K | -7.72 → -7.18 | 1.0→1.2 | Rapid approach learning |
+| 100-230K | -7.18 → -6.81 | 1.2→1.5 | Approach refinement |
+| 230-500K | -6.81 → -6.97 | 1.5→2.0 | **Plateau + regression** |
+| 500-981K | -6.97 → ~-6.9 | 2.0→2.1 | Oscillation, no progress |
+
+### Root Causes
+1. **Approach-only local optimum**: Policy learned to minimize distance to source (approach reward ~-0.1*dist) but never discovered scoop action. Approach reward dominates because it is always available; scoop reward requires specific preconditions (EE below particle surface + near source xy).
+2. **Entropy divergence**: ent_coef=0.01 drove action std from 1.0 to 2.1 over 981K steps. High std → noisy actions → unable to execute precise scoop motion even if discovered.
+3. **Sparse scoop signal**: Scoop reward (0.3 * depth) requires EE to be within 0.15m xy AND below particle surface z=0.15. Random exploration with std=2 rarely hits this narrow precondition.
+4. **Unknown**: Whether Franka gripper can physically complete scoop-transfer in this Genesis MPM setup has NOT been verified with a scripted trajectory.
+
+### Checkpoints Saved
+```
+checkpoints/teacher_v2_staged/
+  best/best_model.zip           (best eval, ~230K steps)
+  scoop_transfer_teacher_{100K,200K,300K,400K,500K,600K}_steps.zip
+```
+
+### Open Questions for Literature Research
+1. How do other MPM/deformable manipulation papers handle reward design?
+2. Is scripted-then-RL (demo-guided) standard for granular manipulation?
+3. What action spaces work for scooping tasks? (delta EE vs waypoints vs joint torques)
+4. How to verify physical feasibility before RL training?
+5. Are there existing Genesis/MPM scooping examples to reference?
