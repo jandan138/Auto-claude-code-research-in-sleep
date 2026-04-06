@@ -35,6 +35,11 @@
 | 2026-04-06 | Phase 3.6: Multi-angle literature research | DONE | 5 agents, report: refine-logs/LITERATURE_RESEARCH_REPORT.md |
 | 2026-04-06 | **BLOCKER: Physical feasibility** | CRITICAL | Parallel-jaw gripper cannot scoop — need custom scoop tool |
 | 2026-04-06 | M1 Pivot Plan | DONE | refine-logs/M1_FAILED_PIVOT_PLAN.md |
+| 2026-04-06 | Phase 4.0–4.6: Edge-push infra | DONE | Gate 0 PASSED (42.2% transfer), wrappers, reward shaping |
+| 2026-04-06 | Phase 4.7: Reward v1 bug fix | DONE | Cumulative→delta reward, particle placement fix |
+| 2026-04-06→07 | Phase 4.8: E1 Teacher PPO (v1–v4) | DONE | v1-v3 config bugs; v4 ran 10K/20K, no learning (reward ±3 of baseline) |
+| 2026-04-07 | Phase 4.8c: E2 Cartesian residual RL | FAILED | IK y-axis inversion — EE can't reach particles via Cartesian deltas |
+| 2026-04-07 | **BLOCKER: IK y-axis inversion** | CRITICAL | Genesis DLS IK inverts y-direction for Franka at home config |
 
 ## Phase 4: M1 Pivot — Edge-Push Task Redesign
 
@@ -77,22 +82,54 @@ NaN/crash:           0               (threshold: 0)       ✓
 | 4.6b | GymWrapper auto obs_dim detection | **DONE** |
 | 4.6c | train_teacher.py wrapper stack support | **DONE** |
 
-**Reward structure (edge-push):**
+**Reward structure (edge-push, v2 — delta-based, 2026-04-06):**
 ```
-approach:  -0.01 * dist_to_source     (guidance only)
-push:       2.0 * mean_particle_y_progress
-transfer:  10.0 * transfer_frac       (dominant)
-spill:     -1.0 * spill_frac
-success:   50.0 at ≥30% transfer
+approach:  -0.01 * dist_to_source              (guidance only, unchanged)
+push:       5.0 * max(0, delta_mean_particle_y) (DELTA per step, was cumulative)
+transfer:  20.0 * max(0, delta_transfer_frac)   (DELTA per step, was cumulative)
+spill:     -2.0 * spill_frac                    (increased from -1.0)
+time:      -0.001                               (increased from -0.0001)
+success:   10.0 one-shot at ≥30% transfer       (was 50.0 every step)
 ```
+**Reward v1 bug**: cumulative r_transfer + r_push gave random/zero-action policy +920 reward (particles auto-fell off edge). Fixed by delta-based rewards + moving particles to platform center (y: 0.03→-0.03).
 
-### Gate 4 — Tiny-Task Overfit: **PENDING** (next)
-| Step | Task | Status |
-|------|------|--------|
-| 4.7 | Residual policy learning (scripted base + RL corrections) | PENDING |
-| 4.8 | E1: Teacher overfit on edge-push tiny task | PENDING |
-| 4.8b | E2: Residual overfit (if E1 fails) | PENDING |
-| 4.9 | Re-evaluate: success_rate ≥ 70%, transferred ≥ 25% | PENDING |
+### Gate 4 — Tiny-Task Overfit: **BLOCKED** — IK y-axis inversion
+
+| Step | Task | Status | Result |
+|------|------|--------|--------|
+| 4.7 | Reward v1 bug fix (cumulative → delta) | **DONE** | Zero-action: +920 → -40 |
+| 4.7b | Particle placement fix (y=0.03→-0.03) | **DONE** | Particles no longer auto-fall |
+| 4.7c | Target/source bbox overlap fix | **DONE** | Clamped target y_min to platform edge |
+| 4.8 | E1v1-v3: budget/horizon fixes | **DONE** | v1: 2M pol steps killed; v2: horizon=80 bug; v3: horizon=2000 OK |
+| 4.8b | E1v4: Teacher PPO with delta reward | **DONE** | 10K/20K steps, reward -38±3, 0% transfer, **no learning** |
+| 4.8c | E2: Cartesian-delta residual RL | **FAILED** | IK y-axis inversion blocks EE from reaching particles |
+| 4.9 | Re-evaluate: success_rate ≥ 70% | **BLOCKED** | Need action space redesign first |
+
+### E1 Teacher PPO Results (2026-04-06→07)
+
+**E1v4** (delta reward, 20K policy steps, killed at 10K):
+```
+Eval curve (policy steps → mean reward):
+  1K: -39.61   2K: -39.48   3K: -37.74   4K: -35.65
+  5K: -41.50   6K: -39.50   7K: -37.04   8K: -37.27
+  9K: -38.57   10K: -49.84
+Random baseline: ~-39.6
+Best: -35.65 @4K (only approach improvement, never triggered r_push/r_transfer)
+```
+**Diagnosis**: PPO oscillated ±3 around baseline. clip_fraction mostly 0, explained_variance ~0. Policy learned weak approach improvement but never discovered push action.
+
+### Critical Finding: IK Y-Axis Inversion (2026-04-07)
+
+**Discovery**: Genesis damped-least-squares IK for Franka Panda **inverts the y-axis** from home configuration. Commanding EE delta (dx=0, dy=-0.45, dz=0) moves EE in +y direction.
+
+**Evidence**: Proportional controller targeting particles at y=-0.03 produces EE trajectory going to y=+0.08→+0.10.
+
+**Impact**: 
+- Explains why E1 PPO couldn't learn push: even correct Cartesian actions are mapped to wrong direction
+- ReducedActionWrapper (3D Cartesian delta) is fundamentally broken for y-axis control
+- Scripted baseline works because it uses `robot.set_qpos()` (joint-space), bypassing IK
+
+**Next step**: Switch to **joint-space action space** (7D joint delta, no IK) or **BC warmstart** from scripted demos.
 
 ## Git Log (probe-then-act)
 
