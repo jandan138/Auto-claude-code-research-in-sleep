@@ -1,10 +1,13 @@
-# Probe-Then-Act: ARIS Automation Plan
+# Probe-Then-Act: ARIS Automation Plan (Revised)
 
 > **Target project:** `/home/zhuzihou/dev/probe-then-act/`
 > **Paper:** "Probe-Then-Act: Active Tactile System Identification for Robust Cross-Material Robot Tool Use in Multi-Physics Simulation"
-> **Target venue:** IEEE T-RL (IROS 2026 / CASE 2026 transfer, deadline 2026-04-30)
+> **Target venue:** IEEE T-RL (deadline 2026-04-30)
 > **Start date:** 2026-04-03
-> **Duration:** 27 days compressed (original 8-week plan)
+> **Current date:** 2026-04-08 (Day 5 of 27)
+> **Remaining:** 22 days
+>
+> **Revised 2026-04-08:** Scope reduced from 8 methods to 3. Task validated as Config D edge-push.
 
 ---
 
@@ -12,227 +15,189 @@
 
 A robot learning method paper: the robot performs short active probing actions to infer hidden material properties, then adapts its manipulation policy accordingly. Evaluated on a cross-material multi-physics benchmark in Genesis simulator (Franka Panda + MPM materials).
 
-**Core hypothesis:** Active probing + latent belief + uncertainty-aware control > reactive / recurrent / domain-randomization baselines under hidden physics.
+**Core hypothesis:** Active probing + latent belief inference > reactive baseline under hidden physics.
 
 ---
 
-## System State Snapshot (2026-04-03)
+## Current Status (Day 5)
 
 | Item | Status |
 |---|---|
 | GPU | RTX 4090 24GB (WSL2) |
-| Genesis venv | `/home/zhuzihou/dev/Genesis/.venv/` Python 3.11.14 |
-| PyTorch | 2.6.0+cu124 (needs upgrade to >= 2.8.0) |
-| WSL2 rendering | OpenGL/EGL needs fix for headless |
-| Package manager | `uv` available |
-| Disk | 916 GB free |
-| Project code | Zero — docs only |
+| Genesis venv | `/home/zhuzihou/dev/Genesis/.venv/` Python 3.11 |
+| PyTorch | 2.11.0+cu126 |
+| Task | Edge-push (Config D: particle y=0.02) |
+| Control | JointResidualWrapper (bypasses IK) |
+| Gate 0 | **PASSED** — Sand 32%, Snow 87%, EP 70% |
+| Gate 2 | **PASSED** — IK/controller bypassed |
+| Gate 4 | **PENDING RETEST** with Config D |
+| Core method | 0% implemented (all stubs) |
 
-**Key Genesis code references:**
-- `Genesis/examples/manipulation/grasp_env.py` — vectorized RL env template
-- `Genesis/examples/coupling/sand_wheel.py` — MPM-rigid coupling pattern
-- `Genesis/examples/sensors/tactile_elastomer_franka.py` — Franka tactile sensing
+### Key Discoveries (Days 1-5)
+- Scoop-lift-dump infeasible (MPM no adhesion) → pivoted to edge-push
+- Cartesian-delta → IK → PD controller broken → bypassed with JointResidualWrapper
+- Config D (particle y=0.02) gives 55pp material gap: Sand 32%, Snow 87%, EP 70%
+- No-op and random baselines confirm task non-triviality
+- Paper scope reduced: 3 methods (M1, M7, M8) instead of 8
 
 ---
 
-## ARIS Skill Execution Schedule
+## Revised Paper Scope
 
-### Phase 0 — Day 1: `/research-lit` + `/novelty-check`
+### Methods (3 instead of 8)
+
+| Method | Role | Status |
+|---|---|---|
+| **M1: Reactive PPO** | Lower bound (no probe, no belief) | Ready (retrain with Config D) |
+| **M7: Probe-Then-Act** | Our method (probe → belief → adaptive control) | Stub — needs ~5 days implementation |
+| **M8: Privileged Teacher** | Upper bound (knows material params) | Ready (train_teacher.py works) |
+
+### Dropped
+- M2 (RNN-PPO), M3 (DomainRand), M4 (Fixed-Probe), M5 (Material Router), M6 (Ours-no-uncertainty)
+- Level-and-Fill task (Task B)
+- Risk head / uncertainty calibration
+- 5-seed sweeps (use 3 seeds)
+
+### Material Splits
+
+| Split | Materials | Purpose |
+|---|---|---|
+| **ID (training)** | Sand (32% scripted) | Hardest material — train here |
+| **OOD-Material** | Snow (87%), ElastoPlastic (70%) | Unseen material families |
+| **OOD-Params** | Sand with extreme E/nu/rho | Same family, shifted params |
+
+### Paper Claims (reduced)
+1. "Fixed manipulation strategy varies by 55pp across materials" — Config D data
+2. "Active probing enables material-adaptive control" — M7 > M1 on OOD
+3. "Cross-material Genesis MPM benchmark" — benchmark contribution
+
+---
+
+## Revised ARIS Execution Schedule
+
+### Phase 1 — Days 1-5: Environment + Infrastructure (DONE)
+- Code scaffold, Genesis env, scripted baselines, training infra
+- IK/controller diagnosis + JointResidualWrapper
+- Config D material-discriminative task design
+- Gate 0 PASSED, Gate 2 PASSED
+
+### Phase 2 — Days 5-8: Gate 4 + Baselines
 
 ```bash
-# In probe-then-act project directory
-/research-lit "active tactile probing latent belief robot manipulation deformable materials hidden physics 2025 2026"
+# Gate 4 retest (Config D)
+python pta/scripts/launch_gate4.py  # Expect sand 32% → pass
+
+# M1 Reactive baseline
+python pta/scripts/train_teacher.py --total-timesteps 500000 --exp-name m1_reactive
+
+# M8 Teacher baseline
+python pta/scripts/train_teacher.py --use-privileged --total-timesteps 500000 --exp-name m8_teacher
 ```
 
-Then:
-```bash
-/novelty-check
-# Input: the Probe-Then-Act proposal from docs/00_PROJECT_BRIEF.md
-```
+### Phase 3 — Days 8-13: Core Method Implementation (Manual)
 
-**Purpose:** Confirm no 2025-2026 concurrent work blocks our contribution.
-**If competitor found:** Adjust positioning before proceeding.
+Implement from stubs:
+1. `pta/models/belief/latent_belief_encoder.py` — probe traces → (z, sigma)
+2. `pta/models/policy/task_policy.py` — belief-conditioned action
+3. Probe phase integration in episode flow
+4. `pta/training/distill/offline_distill.py` — teacher → student
+5. `pta/scripts/train_m7.py` — M7 training script
 
----
-
-### Phase 1 — Days 2-5: Manual Environment + Code Scaffold
-
-Not ARIS-automated. Build from `docs/01_REPO_BLUEPRINT.md`:
-
-1. Initialize git, set up venv, install dependencies
-2. Scaffold `pta/` package (~100 files)
-3. Build Scoop-and-Transfer environment (Genesis MPM + Franka)
-4. Scripted baselines to validate metrics
-5. Write `CLAUDE.md` for ARIS conventions
-
-**Exit gate:** 100 stable steps, scripted scoop works, metrics correct.
-
----
-
-### Phase 2 — Days 5-11: Baselines + Teacher (manual RL training)
-
-Train 5 methods on local RTX 4090:
-- M1: Reactive PPO
-- M2: RNN-PPO
-- M3: Domain Randomization PPO
-- M4: Fixed-Probe + PPO
-- M8: Privileged Teacher (upper bound)
-
-**ARIS prep:** Write `refine-logs/EXPERIMENT_PLAN.md` for Phase 3.
-
----
-
-### Phase 3 — Day 11: `/experiment-bridge`
+### Phase 4 — Day 13: `/experiment-bridge` (Optional)
 
 ```bash
-/experiment-bridge "refine-logs/EXPERIMENT_PLAN.md" — compact: true
+/experiment-bridge "docs/09_NEXT_STEPS_PLAN.md" — compact: true
 ```
 
-**What it does:**
-1. Reads experiment plan with claim-driven roadmap
-2. Implements remaining training code (M5 Material Router, M6 Ours-no-uncertainty, M7 Probe-Then-Act)
-3. Sends code to GPT-5.4 for cross-review
-4. Auto-deploys training runs
-5. Sanity-first: smallest experiment first
+If core method is ready, use ARIS to automate remaining training runs.
 
-**Expected input file:** `refine-logs/EXPERIMENT_PLAN.md` containing:
-- Claim → experiment mapping
-- Method configurations
-- GPU budget per run
-- Success criteria per experiment
-
----
-
-### Phase 4 — Day 17: `/auto-review-loop`
+### Phase 5 — Days 14-16: Evaluation
 
 ```bash
-/auto-review-loop "Probe-Then-Act cross-material robustness evaluation" — compact: true
+# OOD evaluation on 3 materials × 3 methods × 3 seeds
+python pta/scripts/run_ood_eval.py
 ```
 
-**What it does:**
-1. GPT-5.4 reviews all experiment results
-2. Identifies weak claims, missing experiments, statistical issues
-3. Claude fixes issues, reruns experiments
-4. Re-review (up to 4 rounds)
-5. Target: score >= 6/10
+### Phase 6 — Day 16: `/auto-review-loop`
 
-**Expected inputs (auto-discovered):**
-- `results/tables/main_results.csv`
-- `results/tables/ablation_results.csv`
-- Training logs in `logs/`
-- `EXPERIMENT_LOG.md` or `findings.md` (compact mode)
+```bash
+/auto-review-loop "Probe-Then-Act cross-material edge-push" — compact: true
+```
 
----
-
-### Phase 5 — Day 21-24: Consolidation (semi-manual)
-
-- 5-seed sweeps, confidence intervals
-- Level-and-Fill task (conditional on Scoop-Transfer success)
-- Failure taxonomy + qualitative videos
-- Write `NARRATIVE_REPORT.md` for paper pipeline
-
----
-
-### Phase 6 — Day 24: `/paper-writing`
+### Phase 7 — Days 16-22: `/paper-writing`
 
 ```bash
 /paper-writing "NARRATIVE_REPORT.md" — venue: IEEE_JOURNAL, human checkpoint: true
 ```
 
-**What it does:**
-1. Phase 1: Paper plan (outline, contribution mapping)
-2. Phase 2: Figure generation (method overview, result plots, failure gallery)
-3. Phase 3: LaTeX section writing with DBLP/CrossRef citation verification
-4. Phase 4: Compile PDF
-5. Phase 5: 2-round GPT-5.4 improvement loop
-
-**T-RL format constraints:**
-- 12 pages max (Transactions format)
-- Abstract <= 200 words
-- Double-anonymous
-- Multimedia zip <= 60 MB
+### Phase 8 — Days 22-27: Buffer + Submission
 
 ---
 
-## ARIS Input Files Checklist
+## Revised Experiment Matrix
 
-Files to prepare in `probe-then-act/` for ARIS consumption:
-
-| File | Phase | Status | Template |
+| Split | M1 (Reactive) | M7 (Ours) | M8 (Teacher) |
 |---|---|---|---|
-| `RESEARCH_BRIEF.md` | 0 | TODO — convert from `docs/00_PROJECT_BRIEF.md` | `templates/RESEARCH_BRIEF_TEMPLATE.md` |
-| `CLAUDE.md` | 1 | TODO | — |
-| `refine-logs/EXPERIMENT_PLAN.md` | 3 | TODO — write after baselines | `templates/EXPERIMENT_PLAN_TEMPLATE.md` |
-| `EXPERIMENT_LOG.md` | 4 | Auto-generated during training | `templates/EXPERIMENT_LOG_TEMPLATE.md` |
-| `findings.md` | 4 | Auto-generated during eval | `templates/FINDINGS_TEMPLATE.md` |
-| `NARRATIVE_REPORT.md` | 6 | TODO — write after consolidation | `templates/NARRATIVE_REPORT_TEMPLATE.md` |
+| ID: Sand | ✓ (3 seeds) | ✓ (3 seeds) | ✓ (3 seeds) |
+| OOD-Material: Snow | ✓ (3 seeds) | ✓ (3 seeds) | ✓ (3 seeds) |
+| OOD-Material: EP | ✓ (3 seeds) | ✓ (3 seeds) | ✓ (3 seeds) |
+| OOD-Params: Sand-extreme | ✓ (3 seeds) | ✓ (3 seeds) | — |
+| **Ablation: No-Probe** | — | ✓ (2 seeds) | — |
+| **Ablation: No-Belief** | — | ✓ (2 seeds) | — |
+
+Total runs: ~30 (vs. original ~300+)
 
 ---
 
-## Critical Path
+## Critical Path (Revised)
 
 ```
-Day 1-2:  /research-lit + /novelty-check + env setup
-              ↓
-Day 2-5:  Code scaffold + Genesis environment  ← HIGHEST RISK
-              ↓
-Day 5-11: Baseline training (manual RL)
-              ↓
-Day 11-17: /experiment-bridge → main method
-              ↓
-Day 17-21: /auto-review-loop → OOD + ablations
-              ↓
-Day 21-24: Consolidation + NARRATIVE_REPORT.md
-              ↓
-Day 24-27: /paper-writing → submit
+Day 5-8:   Gate 4 retest + M1/M8 baselines
+               ↓
+Day 8-13:  Implement core method (M7)        ← HIGHEST RISK
+               ↓
+Day 13-16: Train M7 + OOD eval + ablations
+               ↓
+Day 16-22: /auto-review-loop + /paper-writing
+               ↓
+Day 22-27: Buffer + submit
 ```
 
 ---
 
-## Risk Register
+## Risk Register (Updated)
 
-| Risk | Impact | Fallback |
+| Risk | Impact | Probability | Mitigation |
+|---|---|---|---|
+| Gate 4 fails with Config D | Blocks all | Low (scripted = 32%) | Adjust geometry further |
+| Belief encoder doesn't help (M7 ≈ M1) | Weak paper | Medium | Ensure OOD materials are genuinely different |
+| Core method implementation > 5 days | Delays paper | Medium | Simplify: MLP encoder, scripted probes only |
+| Training too slow for 3-seed sweeps | Delays eval | Medium | Use Vast.ai for parallel runs |
+| Paper timeline too tight | Miss deadline | Medium | Start outline Day 14; use ARIS pipeline |
+
+---
+
+## ARIS Input Files Status
+
+| File | Phase | Status |
 |---|---|---|
-| Genesis MPM unstable in WSL2 | Blocks all | Option A: rigid-body + hidden friction/mass. Option B: SoftGym/PlasticineLab. Option C: single material + param variation |
-| PyTorch upgrade breaks Genesis | Blocks all | Pin to Genesis-compatible version |
-| 27 days too tight | Miss deadline | Skip Level-and-Fill, reduce to 3 seeds, narrow claims |
-| Single RTX 4090 bottleneck | Slow training | Use `/vast-gpu` for parallel seed sweeps |
-| Weak OOD improvement | Weak paper | Strengthen splits, narrow claims, invest in better evaluation not fancier architecture |
+| `RESEARCH_BRIEF.md` | 0 | DONE |
+| `CLAUDE.md` | 1 | DONE |
+| `docs/09_NEXT_STEPS_PLAN.md` | 3 | DONE (revised plan) |
+| `results/main_results.csv` | 5 | TODO (after training) |
+| `NARRATIVE_REPORT.md` | 7 | TODO (after eval) |
 
 ---
 
-## Experiment Matrix (from `03_EXPERIMENT_PROTOCOL.md`)
+## Documentation Index
 
-| Task | Split | Methods |
+| Doc | Content | Updated |
 |---|---|---|
-| Scoop-Transfer | ID | M1, M2, M3, M4, M6, M7, M8 |
-| Scoop-Transfer | OOD-Material | M1, M2, M3, M4, M6, M7 |
-| Scoop-Transfer | OOD-Tool | M1, M2, M3, M4, M6, M7 |
-| Scoop-Transfer | OOD-Sensor | M1, M2, M3, M4, M6, M7 |
-| Level-Fill | ID | M1, M2, M6, M7, M8 |
-| Level-Fill | OOD-Material | M1, M2, M6, M7 |
-| Level-Fill | OOD-Tool | M1, M2, M6, M7 |
-
-**Methods key:** M1=Reactive PPO, M2=RNN-PPO, M3=DomainRand PPO, M4=Fixed-Probe+PPO, M5=Material Router, M6=Ours-no-uncertainty, M7=Probe-Then-Act, M8=Privileged Teacher
-
----
-
-## Quick-Start Commands
-
-```bash
-# Step 1: Navigate to project
-cd /home/zhuzihou/dev/probe-then-act
-
-# Step 2: Literature check (ARIS)
-/research-lit "active tactile probing latent belief robot manipulation deformable materials 2025 2026"
-/novelty-check
-
-# Step 3: After baselines are trained, run experiment bridge (ARIS)
-/experiment-bridge "refine-logs/EXPERIMENT_PLAN.md" — compact: true
-
-# Step 4: After experiments complete, run review loop (ARIS)
-/auto-review-loop "Probe-Then-Act" — compact: true
-
-# Step 5: After consolidation, write paper (ARIS)
-/paper-writing "NARRATIVE_REPORT.md" — venue: IEEE_JOURNAL, human checkpoint: true
-```
+| `docs/00_PROJECT_BRIEF.md` | Paper positioning, abstract, contributions | 04-03 |
+| `docs/04_VALIDATION_GATES.md` | Gate status tracker | 04-07 |
+| `docs/05_TINY_TASK_OVERFIT_PROTOCOL.md` | Overfit protocol, experiment matrix | 04-07 |
+| `docs/07_CURRENT_BLOCKERS_AND_ACTIONS.md` | Current blockers + action plan | 04-07 |
+| `docs/08_48HR_SPRINT_RESULTS.md` | IK/controller sprint results | 04-07 |
+| `docs/09_NEXT_STEPS_PLAN.md` | **Active execution plan** | 04-07 |
+| `docs/10_TASK_DESIGN_INVESTIGATION.md` | Config D + material sweep + validation | 04-08 |
+| `docs/11_BOWL_TOOL_INVESTIGATION.md` | Bowl tool feasibility (future Task B) | 04-08 |

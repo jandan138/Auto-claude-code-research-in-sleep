@@ -51,6 +51,51 @@
 | 2026-04-07 | **Gate 2 (Implementation)** | **PASSED** | IK/controller issues diagnosed + bypassed |
 | 2026-04-07 | **Gate 4 (Tiny-Task)** | **PARTIAL** | Learner reaches baseline (12.5%) but not 30% target |
 | 2026-04-07 | **NEW BLOCKER** | ACTIVE | Base trajectory quality (~12.5% vs. 30% target) |
+| 2026-04-07 | Deep investigation | DONE | Trajectory mismatch found (410 steps vs 1120, no settle, short push) |
+| 2026-04-07 | Paper gap assessment | DONE | Core method 0% implemented (all stubs). Reduced to 3-method scope |
+| 2026-04-07 | Next steps plan | DONE | docs/09_NEXT_STEPS_PLAN.md — trajectory fix → Gate 4 → belief encoder → paper |
+| 2026-04-07 | **Gate 0.5: Material sweep** | DONE | Sand 12.6%, Snow 22.3%, EP 0.0%, Liquid 13.8% — materials discriminate |
+| 2026-04-07 | Scooping feasibility test | DONE | **DEAD** — 0% transfer all materials (MPM no adhesion during traverse) |
+| 2026-04-07 | Scoop capture-phase analysis | DONE | Material-discriminative: Sand 572, Snow 613, EP 13 captured; EP 1114 retained at lift |
+| 2026-04-07 | **Config D geometry sweep** | DONE | particle_pos y=-0.03→0.02: Sand 32%, Snow 87%, EP 70% — **55pp gap** |
+| 2026-04-07 | Config D no-op validation | DONE | 0% transfer all materials with no action — NOT gravity-trivial |
+| 2026-04-07 | Config D random validation | DONE | Joint-space random: Sand 0-11%, Snow 0-12% with 86-97% spill — scripted 3-7x better |
+| 2026-04-07 | **Config D adopted** | DONE | scene_builder.py updated: particle_pos=(0.55, 0.02, 0.20) |
+| 2026-04-07 | 42% vs 12.6% root cause | DONE | Gate 0's 42% was old config (y=0.03); intentional bugfix moved to y=-0.03 |
+| 2026-04-07 | Paper scope decision | DONE | Reduced to 3 methods (M1 Reactive, M7 Probe-Then-Act, M8 Teacher) |
+| 2026-04-08 | Bowl tool investigation | DONE | Feasible (5-line MJCF change). Material-dependent traverse speed. Future Task B |
+| 2026-04-08 | docs/10_TASK_DESIGN_INVESTIGATION.md | DONE | Full material sweep + Config D validation + random baselines |
+| 2026-04-08 | docs/11_BOWL_TOOL_INVESTIGATION.md | DONE | Bowl tool feasibility + physics analysis |
+
+## Current Status (2026-04-08, Day 5)
+
+### Gate Status
+| Gate | Status |
+|------|--------|
+| 0 — Physical Feasibility | **PASSED** (Config D: Sand 32%, Snow 87%, EP 70%) |
+| 1 — Task/Theory Spec | PARTIAL |
+| 2 — Implementation Correctness | **PASSED** (IK/controller bypassed via JointResidualWrapper) |
+| 3 — System Smoke Test | **PASSED** |
+| 4 — Tiny-Task Overfit | **PENDING RETEST** (Config D should pass — 32% > 30% for sand) |
+| 5 — Full-Scale Experiment | BLOCKED (need Gate 4) |
+
+### Active Config
+- `particle_pos: (0.55, 0.02, 0.20)` — Config D
+- `JointResidualWrapper` — joint-space residual, bypasses IK
+- Task: edge-push (elevated platform, 3-pass push + settle)
+- Reward: delta-based v2
+
+### Immediate Next (Day 5-8)
+1. Gate 4 retest with Config D (expect sand 32% → pass)
+2. Train M1 Reactive PPO baseline (3 seeds)
+3. Train M8 Teacher baseline (3 seeds)
+
+### Paper Scope (Revised)
+- **3 methods:** M1 (Reactive), M7 (Probe-Then-Act), M8 (Teacher)
+- **3 materials:** Sand, Snow, ElastoPlastic
+- **OOD:** Train on sand (32%, hardest) → test on snow (87%) and EP (70%)
+- **Core method stubs:** Belief encoder, task policy, distillation — all NotImplementedError
+- **Estimated implementation:** ~5 days for core method (Days 8-13)
 
 ## Phase 4: M1 Pivot — Edge-Push Task Redesign
 
