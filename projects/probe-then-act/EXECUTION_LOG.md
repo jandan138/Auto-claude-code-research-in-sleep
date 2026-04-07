@@ -40,6 +40,17 @@
 | 2026-04-06→07 | Phase 4.8: E1 Teacher PPO (v1–v4) | DONE | v1-v3 config bugs; v4 ran 10K/20K, no learning (reward ±3 of baseline) |
 | 2026-04-07 | Phase 4.8c: E2 Cartesian residual RL | FAILED | IK y-axis inversion — EE can't reach particles via Cartesian deltas |
 | 2026-04-07 | **BLOCKER: IK y-axis inversion** | CRITICAL | Genesis DLS IK inverts y-direction for Franka at home config |
+| 2026-04-07 | **48-HOUR SPRINT** | DONE | Agent team (3 agents) diagnostic + implementation sprint |
+| 2026-04-07 | Sprint Task 1: Controller A/B test | DONE | `set_qpos` 10.65% transfer; `control_dofs_position` **0%** (z-div 0.68m) |
+| 2026-04-07 | Sprint Task 2: IK minimal repro | DONE | NOT Genesis bug — single-step DLS coupling artifact. Iterative IK 8/8 correct |
+| 2026-04-07 | Sprint Go/No-Go | **GO** | Joint-space residual confirmed as path forward |
+| 2026-04-07 | Sprint Task 3: JointResidualWrapper | DONE | `pta/envs/wrappers/joint_residual_wrapper.py` — bypasses IK, uses set_qpos |
+| 2026-04-07 | Sprint Task 4: Scripted demos | DONE | 20 episodes → `checkpoints/demos/scripted_joint_demos.npz` (1.45 MB) |
+| 2026-04-07 | Sprint Task 5: Gate 4 residual PPO v1 | DONE | scale=0.1, reward -2.09@20K (= scripted baseline). 12.5% transfer |
+| 2026-04-07 | Sprint Task 6: Gate 4 residual PPO v2 | DONE | scale=0.2, best reward -1.20@20K. 12-15% transfer |
+| 2026-04-07 | **Gate 2 (Implementation)** | **PASSED** | IK/controller issues diagnosed + bypassed |
+| 2026-04-07 | **Gate 4 (Tiny-Task)** | **PARTIAL** | Learner reaches baseline (12.5%) but not 30% target |
+| 2026-04-07 | **NEW BLOCKER** | ACTIVE | Base trajectory quality (~12.5% vs. 30% target) |
 
 ## Phase 4: M1 Pivot — Edge-Push Task Redesign
 
@@ -131,6 +142,57 @@ Best: -35.65 @4K (only approach improvement, never triggered r_push/r_transfer)
 
 **Next step**: Switch to **joint-space action space** (7D joint delta, no IK) or **BC warmstart** from scripted demos.
 
+## 48-Hour Diagnostic Sprint (2026-04-07)
+
+> Full report: `docs/08_48HR_SPRINT_RESULTS.md`
+
+### Team Structure
+3-agent team (`pta-sprint`): sprint-lead (coordinator), controller-diag (A/B test + demos), ik-fix (IK repro + wrapper + training).
+
+### Key Results
+
+**Controller A/B Test** (`results/controller_replay_ab_test.csv`):
+- Mode A (`set_qpos`): 10.65% transfer, EE reaches y=0.41
+- Mode B (`control_dofs_position`): **0% transfer**, EE z-divergence 0.68m, y lags 0.21m
+- Verdict: PD controller completely fails for this task
+
+**IK Minimal Repro** (`docs/IK_MINIMAL_REPRO.md`):
+- Single-step DLS coupling artifact: 3-35% y-gain, sign flips near zero
+- Iterative DLS (50 iters): 8/8 sign matches — NOT a Genesis bug
+- Genesis built-in `inverse_kinematics()`: also correct
+- Jacobian J[y, J1] = +0.308 — correct
+
+**JointResidualWrapper** (`pta/envs/wrappers/joint_residual_wrapper.py`):
+- Design: `q_applied = q_base[t] + residual_scale * delta_q`
+- Bypasses IK entirely, uses `robot.set_qpos()` directly
+- 7D action space, 30D observation (22 base + 7 q_base + 1 step_frac)
+- Two trajectories: `"edge_push"` (410 steps), `"scoop"` (215 steps)
+- Smoke-tested: zero residual reproduces scripted baseline
+
+**Gate 4 Training** (`docs/GATE4_TRAINING_REPORT.md`):
+| Run | Scale | Best Reward | Transfer | vs. E1 Cartesian |
+|-----|-------|-------------|----------|-------------------|
+| v1 | 0.1 | -2.04 @25K | ~12.5% | 20x better |
+| v2 | 0.2 | -1.20 @20K | ~12-15% | 33x better |
+| E1 (old) | — | -35.65 @4K | ~0% | random baseline |
+
+Gate 4 targets NOT MET (12.5% vs. 30%), but control stack is now validated.
+
+### New Diagnosis
+Bottleneck shifted from "broken control stack" to "base trajectory quality." The scripted edge-push only achieves ~12.5% transfer. Next: better trajectory, wider residual, curriculum.
+
+### Files Delivered
+- `pta/scripts/controller_replay_ab.py`
+- `pta/scripts/ik_minimal_repro.py`
+- `pta/scripts/collect_joint_demos.py`
+- `pta/scripts/launch_gate4.py`, `launch_gate4_v2.py`
+- `pta/envs/wrappers/joint_residual_wrapper.py`
+- `pta/training/rl/train_teacher.py` (updated: `use_joint_residual` param)
+- `checkpoints/demos/scripted_joint_demos.npz`
+- `docs/IK_MINIMAL_REPRO.md`
+- `docs/GATE4_TRAINING_REPORT.md`
+- `docs/08_48HR_SPRINT_RESULTS.md`
+
 ## Git Log (probe-then-act)
 
 ```
@@ -164,10 +226,10 @@ c7c5792 docs: novelty check report
 
 | Category | Count |
 |----------|-------|
-| Python (.py) | 129 |
+| Python (.py) | 135 |
 | YAML (.yaml) | 23 |
-| Markdown (.md) | 12 |
-| CSV (.csv) | 2 |
+| Markdown (.md) | 16 |
+| CSV (.csv) | 3 |
 
 ## Environment Verification
 
