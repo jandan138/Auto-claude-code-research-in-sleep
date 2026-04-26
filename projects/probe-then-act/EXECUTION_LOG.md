@@ -8,7 +8,7 @@
 |------|-------|--------|------------|
 | 2026-04-03 | Phase 0.1: Skills install | DONE | 25 ARIS skills → ~/.claude/skills/ |
 | 2026-04-03 | Phase 0.2: Env setup | DONE | PyTorch 2.11+cu126, Genesis OK, MPM smoke test passed |
-| 2026-04-03 | Phase 0.3: Literature check | DONE | No direct competitor. Report: docs/05_NOVELTY_CHECK_REPORT.md |
+| 2026-04-03 | Phase 0.3: Literature check | DONE | No direct competitor. Report: docs/50_reports/06_NOVELTY_CHECK_REPORT.md |
 | 2026-04-03 | Phase 0.4: ARIS inputs | DONE | RESEARCH_BRIEF.md, CLAUDE.md created |
 | 2026-04-03 | Phase 1.1: Code scaffold | DONE | 126 .py + 22 .yaml files |
 | 2026-04-04 | Phase 1.2: Genesis env | DONE | ScoopTransfer: 100 steps, 0 NaN, 400 particles |
@@ -18,7 +18,7 @@
 | 2026-04-04 | BLOCKER FIX | DONE | AABB z=0, action_scale 0.05, horizon 500, reward shaping |
 | 2026-04-04 | Phase 2.2: M2 RNN-PPO | DONE | 500K steps, 6h13m, 22 FPS, best reward=-6.89 |
 | 2026-04-04 | Phase 2.6: EXPERIMENT_PLAN | DONE | refine-logs/EXPERIMENT_PLAN.md written |
-| 2026-04-04 | Week 1 Deliverable | DONE | docs/Week1_environment_bootstrap.md |
+| 2026-04-04 | Week 1 Deliverable | DONE | docs/30_records/Week1_environment_bootstrap.md |
 | 2026-04-04 | NaN FIX | DONE | ctrl_dt 5e-3→2e-3, substeps 25, NaN guard in step() |
 | 2026-04-04 | GPU OPT | DONE | GenesisBatchedVecEnv, 5x speedup with n_envs=4 |
 | 2026-04-04→05 | Phase 2.3: M3 DomainRand PPO | DONE | 500K steps, 7h08m, 19 FPS, reward=-7.98 |
@@ -53,7 +53,7 @@
 | 2026-04-07 | **NEW BLOCKER** | ACTIVE | Base trajectory quality (~12.5% vs. 30% target) |
 | 2026-04-07 | Deep investigation | DONE | Trajectory mismatch found (410 steps vs 1120, no settle, short push) |
 | 2026-04-07 | Paper gap assessment | DONE | Core method 0% implemented (all stubs). Reduced to 3-method scope |
-| 2026-04-07 | Next steps plan | DONE | docs/09_NEXT_STEPS_PLAN.md — trajectory fix → Gate 4 → belief encoder → paper |
+| 2026-04-07 | Next steps plan | DONE | docs/20_planning/09_NEXT_STEPS_PLAN.md — trajectory fix → Gate 4 → belief encoder → paper |
 | 2026-04-07 | **Gate 0.5: Material sweep** | DONE | Sand 12.6%, Snow 22.3%, EP 0.0%, Liquid 13.8% — materials discriminate |
 | 2026-04-07 | Scooping feasibility test | DONE | **DEAD** — 0% transfer all materials (MPM no adhesion during traverse) |
 | 2026-04-07 | Scoop capture-phase analysis | DONE | Material-discriminative: Sand 572, Snow 613, EP 13 captured; EP 1114 retained at lift |
@@ -64,44 +64,167 @@
 | 2026-04-07 | 42% vs 12.6% root cause | DONE | Gate 0's 42% was old config (y=0.03); intentional bugfix moved to y=-0.03 |
 | 2026-04-07 | Paper scope decision | DONE | Reduced to 3 methods (M1 Reactive, M7 Probe-Then-Act, M8 Teacher) |
 | 2026-04-08 | Bowl tool investigation | DONE | Feasible (5-line MJCF change). Material-dependent traverse speed. Future Task B |
-| 2026-04-08 | docs/10_TASK_DESIGN_INVESTIGATION.md | DONE | Full material sweep + Config D validation + random baselines |
-| 2026-04-08 | docs/11_BOWL_TOOL_INVESTIGATION.md | DONE | Bowl tool feasibility + physics analysis |
+| 2026-04-08 | docs/40_investigations/10_TASK_DESIGN_INVESTIGATION.md | DONE | Full material sweep + Config D validation + random baselines |
+| 2026-04-08 | docs/40_investigations/11_BOWL_TOOL_INVESTIGATION.md | DONE | Bowl tool feasibility + physics analysis |
+| 2026-04-08 | **M7 Core Method Implementation** | **DONE** | LatentBeliefEncoder, ProbePhaseWrapper, TaskPolicy, train_m7.py |
+| 2026-04-08 | train_baselines.py | DONE | Unified M1/M8/Gate4 training with use_privileged flag |
+| 2026-04-08 | run_ood_eval_v2.py | DONE | Config D OOD eval: M1/M7/M8 × 5 splits × 3 seeds |
+| 2026-04-08 | run_all_experiments.sh | DONE | Full pipeline script: Gate4→M1→M8→M7→Ablations→Eval |
+| 2026-04-08 | **Full pipeline launched** | RUNNING | PID 2095463, logs/run_all.log |
 
-## Current Status (2026-04-08, Day 5)
+## Current Status (2026-04-15, Day 12 of 27)
+
+### Hotfix Executed — Stage A+B PASSED, Stage C Running
+
+**All 4 hotfixes implemented via TDD (20 tests, all green).** Zero-action baseline now achieves +20,266 reward (was -83), 36.3% transfer (was ~12%), 12.4% spill. 50K RL validation running.
 
 ### Gate Status
 | Gate | Status |
 |------|--------|
 | 0 — Physical Feasibility | **PASSED** (Config D: Sand 32%, Snow 87%, EP 70%) |
-| 1 — Task/Theory Spec | PARTIAL |
+| 1 — Task/Theory Spec | **PARTIAL** (formal contract not yet written) |
 | 2 — Implementation Correctness | **PASSED** (IK/controller bypassed via JointResidualWrapper) |
 | 3 — System Smoke Test | **PASSED** |
-| 4 — Tiny-Task Overfit | **PENDING RETEST** (Config D should pass — 32% > 30% for sand) |
-| 5 — Full-Scale Experiment | BLOCKED (need Gate 4) |
+| 4 — Tiny-Task Overfit | **RETESTING** — Hotfix applied, 50K validation running |
+| 5 — Full-Scale Experiment | **BLOCKED** (need Gate 4) |
 
-### Active Config
+### Hotfix Summary (Day 12)
+| Fix | Commit | Tests | Description |
+|-----|--------|-------|-------------|
+| Fix 1 | 64b1270 | 4/4 | 80-step settle segment added to trajectory (410→490) |
+| Fix 2 | e333081 | 8/8 | particle_stats (mean_y, transfer_frac, spill_frac) added to obs |
+| Fix 3 | ac4f3cc | 5/5 | Cumulative reward restored, spill/transfer asymmetry fixed |
+| Fix 4 | 4761e96 | 3/3 | residual_scale 0.2→0.05 |
+
+### Active Config (post-hotfix)
 - `particle_pos: (0.55, 0.02, 0.20)` — Config D
 - `JointResidualWrapper` — joint-space residual, bypasses IK
-- Task: edge-push (elevated platform, 3-pass push + settle)
-- Reward: delta-based v2
+- Task: edge-push (elevated platform, 3-pass push + 80-step settle)
+- Reward: **cumulative** (r_push=2.0, r_transfer=10.0, r_spill=-1.0, r_success=50.0/step, r_time=-0.0001)
+- Obs: proprio + step_fraction + **particle_stats(3D)**
+- residual_scale: **0.05** (was 0.2)
 
-### Immediate Next (Day 5-8)
-1. Gate 4 retest with Config D (expect sand 32% → pass)
-2. Train M1 Reactive PPO baseline (3 seeds)
-3. Train M8 Teacher baseline (3 seeds)
+### 500K Training Results (Days 8-14)
+
+| Method | Seed | Total Steps | Final Eval Reward | Status |
+|--------|------|-------------|-------------------|--------|
+| M1 Reactive | 42 | 500K | -433.15 | Complete — FAILED |
+| M1 Reactive | 0 | 500K | -2.80 | Complete — marginal |
+| M1 Reactive | 1 | 500K | -64.27 | Complete — FAILED |
+| M8 Teacher | 42 | 800K (300K+resume 500K) | -134.33 | Complete — learned then collapsed |
+| M8 Teacher | 0 | 500K | -298.45 | Complete — never learned |
+| M8 Teacher | 1 | 500K | -154.84 @300K | Running (PID 1842393) — not promising |
+
+**M8 seed=42 detail**: Only run that ever achieved positive reward (+4.32 peak at 610K). Experienced two stable positive plateaus (490-530K and 610-670K) before catastrophic collapse at 730K→800K. Consistent with PPO catastrophic forgetting.
+
+**M7, ablations, and OOD eval**: Never launched — pipeline stalled at M1/M8 baselines.
+
+### PID 2095463 (original pipeline): TERMINATED
+### PID 1842393 (M8 seed=1): STILL RUNNING but using defective config — recommend kill
+
+### M7 Core Method (Implemented Day 5)
+- **LatentBeliefEncoder** (`pta/models/belief/latent_belief_encoder.py`): probe traces (B,N,30D) → MLP → mean-pool → z(16D) + sigma(16D)
+- **ProbePhaseWrapper** (`pta/envs/wrappers/probe_phase_wrapper.py`): episode start = 3 probe steps (zero residual), encode traces → z, append to obs
+- **TaskPolicy** (`pta/models/policy/task_policy.py`): obs=[base_obs, z] → SB3 MlpPolicy
+- **train_m7.py**: stack = GenesisGymWrapper → JointResidualWrapper → ProbePhaseWrapper, supports --ablation {none, no_probe, no_belief}
+- **train_baselines.py**: unified M1 (no priv) / M8 (priv) / Gate4 training
 
 ### Paper Scope (Revised)
 - **3 methods:** M1 (Reactive), M7 (Probe-Then-Act), M8 (Teacher)
 - **3 materials:** Sand, Snow, ElastoPlastic
 - **OOD:** Train on sand (32%, hardest) → test on snow (87%) and EP (70%)
-- **Core method stubs:** Belief encoder, task policy, distillation — all NotImplementedError
-- **Estimated implementation:** ~5 days for core method (Days 8-13)
+- **Core method:** IMPLEMENTED (was 0%, now 100% — ready for training)
+
+### 2026-04-18 Recovery Update — Gate 4 PROMOTED, Formal M8 Completed
+
+- `docs/10_protocols/04_VALIDATION_GATES.md` now records **Gate 4 = PASSED** and **Gate 5 = ALLOWED**
+- Formal post-hotfix `M8 seed=42` retrain completed in the isolated worktree at `550400` timesteps
+- Late-stage eval curve remained unstable: strong plateaus above `23K` reward were followed by a final drop to `14.4K +/- 6.6K`
+- Corrected tiny-task re-evaluation shows:
+- `best_model.zip`: reward `23922.41 +/- 3.76`, transfer `0.6426`, spill `0.2780`, success `1.00`
+- `scoop_transfer_teacher_final.zip`: reward `18696.34 +/- 2246.06`, transfer `0.3505`, spill `0.5822`, success `1.00`
+- Working interpretation: hotfix restored learnability and produced a strong Teacher checkpoint, but PPO late-stage drift remains. Downstream evaluation should prefer the best checkpoint rather than assuming the final checkpoint is representative.
+- Recommended next step: continue Phase 3/4 execution (`M1` → `M7` → corrected OOD eval), with automated orchestration now available via the cron coordinator.
+
+### 2026-04-19 Automation Update — Cron Enabled, M1 Auto-Advance Started
+
+- 90-minute cron orchestration installed via `pta/scripts/install_cron_aris_orchestrator.sh`
+- Active crontab entries:
+  - `0 */3 * * * /home/zhuzihou/dev/probe-then-act/.worktrees/aris-resume-stage-d/pta/scripts/run_cron_aris_orchestrator.sh`
+  - `30 1-22/3 * * * /home/zhuzihou/dev/probe-then-act/.worktrees/aris-resume-stage-d/pta/scripts/run_cron_aris_orchestrator.sh`
+- Manual trigger of the coordinator confirmed post-M8 transition works
+- Coordinator state file: `.worktrees/aris-resume-stage-d/results/orchestration/aris_state.json`
+- Coordinator log: `.worktrees/aris-resume-stage-d/logs/orchestration/cron_aris_orchestrator.log`
+- `M1 seed=42` auto-launched as the next stage:
+  - PID: `467285`
+  - Command: `python pta/scripts/train_baselines.py --method m1 --seed 42 --total-timesteps 500000 --residual-scale 0.05`
+  - Log: `.worktrees/aris-resume-stage-d/logs/orchestration/launch_m1.log`
+
+Working interpretation: the local automation layer is now active and has successfully taken over Phase 3 progression after `M8 seed=42` completed.
+
+### 2026-04-25 OOD Eval Hardening — NaN Episodes Counted, Sweep Continues
+
+- `pta/scripts/run_ood_eval_v2.py` now handles Genesis episode-level NaNs by counting the affected episode as a failed rollout instead of aborting the whole OOD sweep.
+- Failed NaN episode scoring: zero reward, zero transfer, `spill_ratio=1.0`, `success=0`, and increment `n_failed_episodes`.
+- Non-NaN exceptions still halt evaluation to avoid masking code/configuration bugs.
+- Aggregate `main_results.csv` now includes failed-episode accounting via `n_failed_episodes_sum` / mean / std, and the summary table prints `FailEp`.
+- Cron schedule and coordinator scripts were not changed; the active OOD process must be restarted after this code change for the stricter accounting to affect fresh outputs.
+
+### 2026-04-26 OOD Eval Blocker — Process-Level OOM Restart Loop
+
+- Current runtime state: no `run_ood_eval_v2.py` process is alive, but `.worktrees/aris-resume-stage-d/results/orchestration/aris_state.json` still reports `ood_eval.running=true`; treat that as stale until the next coordinator reconciliation.
+- No claim-ready OOD outputs exist yet: `results/ood_eval_per_seed.csv` and `results/main_results.csv` are absent.
+- Kernel evidence confirms process-level OOM kills of cron-launched Python eval processes:
+  - `2026-04-25 21:43 HKT`: PID `1159227`, anon RSS `12133604kB`
+  - `2026-04-26 03:45 HKT`: PID `1241153`, anon RSS `12328420kB`
+  - `2026-04-26 09:20 HKT`: PID `1339114`, anon RSS `12361992kB`
+- Latest OOD attempt reached `m7_pta seed=0 ood_snow` after completing `m1_reactive` all seeds, `m8_teacher seed=42`, and `m7_pta seed=42`, but all progress was lost because CSVs are written only at the end.
+- Next required action for the automatic research pipeline: implement resumable OOD eval with per-row persistence and restart-time skip logic before any more blind cron retries. Probe repo plan: `docs/superpowers/plans/2026-04-26-resumable-ood-eval.md`.
+
+### 2026-04-26 Resumable OOD Eval Implemented — Fresh Sweep Running
+
+- Implemented resumable OOD evaluation in `.worktrees/aris-resume-stage-d/pta/scripts/run_ood_eval_v2.py` with per-row persistence to `results/ood_eval_per_seed.csv`, default resume/skip logic, `--no-resume` cleanup, sanitized CSV loading, and atomic final rewrites.
+- Hardened `.worktrees/aris-resume-stage-d/pta/scripts/cron_aris_orchestrator.py` so OOD completion requires fresh, well-formed, exact per-seed keys plus matching aggregate counts; stale outputs trigger `--no-resume`, while OOM-restart partial outputs still resume.
+- Regression evidence: `source "/home/zhuzihou/dev/Genesis/.venv/bin/activate" && pytest tests/test_run_ood_eval_v2.py tests/test_cron_aris_orchestrator.py tests/test_cron_shell_contract.py -q` -> `82 passed in 0.28s`.
+- Initial runtime evidence: final evaluator relaunched as PID `1410747`; cron schedule restored; the first persisted row was `m1_reactive seed=42 id_sand`, mean transfer `0.6332`, spill `0.2584`, success `1.0`, failed episodes `0`.
+- Superseded action: the resumable OOD sweep later completed and result-to-claim was run; see the next entry.
+
+### 2026-04-26 Result-to-Claim Verdict — Original Claims Not Supported
+
+- Corrected OOD v2 completed with `35/35` per-seed rows and `15` aggregate rows.
+- Verdict from result-to-claim (`pending Codex MCP review`, corroborated by primary + auxiliary reviewers): `claim_supported=no` for the original broad PTA claims.
+- M7 vs M1: all-OOD transfer delta `-0.0858`, spill delta `+0.0894`, success delta `0.0`; M7 only improves on `ood_elastoplastic` and is worse on ID, snow, soft-sand, and hard-sand transfer/spill.
+- Claims blocked: active probing robustness (not consistent), explicit belief vs passive memory (M2 absent), uncertainty/failure avoidance (M6 and uncertainty diagnostics absent), broad generalization (only one positive OOD split).
+- Next automatic research step: ablation-first diagnostic cycle in probe repo `refine-logs/EXPERIMENT_PLAN.md` and `refine-logs/EXPERIMENT_TRACKER.md`.
+
+### 2026-04-26 Direction Decision — Option 1 Selected
+
+- Strategy discussion selected **Option 1: Ablation-First Diagnostic** as the next automatic research step.
+- Immediate approved scope: train `m7_noprobe` and `m7_nobelief` for seeds `42/0/1`, then rerun corrected resumable OOD v2.
+- Deferred: M2/RNN, elastoplastic-only expansion, uncertainty diagnostics, and paper writing until ablation evidence supports a narrowed claim.
+- Stop gate: if ablations do not explain or repair M7 regressions, pivot away from broad PTA robustness.
+
+### 2026-04-26 Ablation Launch — R001 Running
+
+- Launched `m7_noprobe seed=42` as the first approved ablation-first diagnostic run.
+- Screen session: `aris_m7_noprobe_s42`; Python PID: `1518354`.
+- Command: `python pta/scripts/train_m7.py --ablation no_probe --seed 42 --total-timesteps 500000 --residual-scale 0.05`.
+- Log: `.worktrees/aris-resume-stage-d/logs/orchestration/train_m7_noprobe_seed42.log`.
+- Next after completion: mark R001 done, then advance R002/R003 (`m7_noprobe` seeds `0/1`) before `m7_nobelief` seeds.
+
+### 2026-04-26 DLC Execution Route — Probe Repo Owns Submitter
+
+- Selected Approach B for DSW/PAI-DLC acceleration: keep executable DLC submit/worker code inside the probe repo and keep this Auto repo as a status mirror.
+- Probe repo runbook: `.worktrees/aris-resume-stage-d/docs/30_records/DLC_EXECUTION_RUNBOOK.md`.
+- Probe repo scripts: `.worktrees/aris-resume-stage-d/pta/scripts/dlc/submit_jobs.py`, `launch_job.sh`, `run_task.sh`, and `submit_ablation_sweep.sh`.
+- DLC workers are restricted to bounded `smoke_env`, `train_ablation`, and `eval_ood` commands. Do not run cron, ARIS, opencode, Claude, Codex, or Auto-repo orchestration inside DLC.
+- Because R001 is already running locally, the recommended DSW submission route is: smoke first, then `m7_noprobe` seeds `0/1`, then `m7_nobelief` seeds `42/0/1`; avoid duplicating `m7_noprobe seed=42` unless the local run is abandoned or isolated.
 
 ## Phase 4: M1 Pivot — Edge-Push Task Redesign
 
 > **Canonical plan**: `refine-logs/M1_FAILED_PIVOT_PLAN.md`
-> **Validation gates**: `docs/04_VALIDATION_GATES.md`
-> **Tiny-task protocol**: `docs/05_TINY_TASK_OVERFIT_PROTOCOL.md`
+> **Validation gates**: `docs/10_protocols/04_VALIDATION_GATES.md`
+> **Tiny-task protocol**: `docs/10_protocols/05_TINY_TASK_OVERFIT_PROTOCOL.md`
 
 **Core pivot**: Scoop-lift-dump infeasible in Genesis MPM (particles don't adhere to rigid scoop during traverse). Redesigned as **edge-push task**: elevated platform + scoop pushes particles off +y edge into target below.
 
@@ -189,7 +312,7 @@ Best: -35.65 @4K (only approach improvement, never triggered r_push/r_transfer)
 
 ## 48-Hour Diagnostic Sprint (2026-04-07)
 
-> Full report: `docs/08_48HR_SPRINT_RESULTS.md`
+> Full report: `docs/30_records/08_48HR_SPRINT_RESULTS.md`
 
 ### Team Structure
 3-agent team (`pta-sprint`): sprint-lead (coordinator), controller-diag (A/B test + demos), ik-fix (IK repro + wrapper + training).
@@ -201,7 +324,7 @@ Best: -35.65 @4K (only approach improvement, never triggered r_push/r_transfer)
 - Mode B (`control_dofs_position`): **0% transfer**, EE z-divergence 0.68m, y lags 0.21m
 - Verdict: PD controller completely fails for this task
 
-**IK Minimal Repro** (`docs/IK_MINIMAL_REPRO.md`):
+**IK Minimal Repro** (`docs/40_investigations/IK_MINIMAL_REPRO.md`):
 - Single-step DLS coupling artifact: 3-35% y-gain, sign flips near zero
 - Iterative DLS (50 iters): 8/8 sign matches — NOT a Genesis bug
 - Genesis built-in `inverse_kinematics()`: also correct
@@ -214,7 +337,7 @@ Best: -35.65 @4K (only approach improvement, never triggered r_push/r_transfer)
 - Two trajectories: `"edge_push"` (410 steps), `"scoop"` (215 steps)
 - Smoke-tested: zero residual reproduces scripted baseline
 
-**Gate 4 Training** (`docs/GATE4_TRAINING_REPORT.md`):
+**Gate 4 Training** (`docs/30_records/GATE4_TRAINING_REPORT.md`):
 | Run | Scale | Best Reward | Transfer | vs. E1 Cartesian |
 |-----|-------|-------------|----------|-------------------|
 | v1 | 0.1 | -2.04 @25K | ~12.5% | 20x better |
@@ -234,9 +357,9 @@ Bottleneck shifted from "broken control stack" to "base trajectory quality." The
 - `pta/envs/wrappers/joint_residual_wrapper.py`
 - `pta/training/rl/train_teacher.py` (updated: `use_joint_residual` param)
 - `checkpoints/demos/scripted_joint_demos.npz`
-- `docs/IK_MINIMAL_REPRO.md`
-- `docs/GATE4_TRAINING_REPORT.md`
-- `docs/08_48HR_SPRINT_RESULTS.md`
+- `docs/40_investigations/IK_MINIMAL_REPRO.md`
+- `docs/30_records/GATE4_TRAINING_REPORT.md`
+- `docs/30_records/08_48HR_SPRINT_RESULTS.md`
 
 ## Git Log (probe-then-act)
 
@@ -427,3 +550,90 @@ checkpoints/teacher_v2_staged/
 3. What action spaces work for scooping tasks? (delta EE vs waypoints vs joint torques)
 4. How to verify physical feasibility before RL training?
 5. Are there existing Genesis/MPM scooping examples to reference?
+
+---
+
+## Days 6-14: 500K Baseline Training + Failure Diagnosis
+
+### Timeline (Days 6-14)
+| Date | Event |
+|------|-------|
+| 2026-04-08→11 | run_all_experiments.sh pipeline running (PID 2095463) |
+| 2026-04-11 | PID 2095463 terminated; M1 3 seeds + M8 seed42 (300K) complete |
+| 2026-04-12 | M8 seed=42 resumed from 300K checkpoint → trained to 800K total |
+| 2026-04-12 20:48 | M8 seed=42 resume complete — final reward -134.33 (collapsed from +4.32 peak) |
+| 2026-04-14 | M8 seed=0 complete (500K, reward -298.45). M8 seed=1 launched (PID 1842393) |
+| 2026-04-15 | M8 seed=1 at 300K/500K (-154.84). **Two-round diagnosis investigation launched** |
+
+### Day 12 Diagnosis: Cross-Validated Root Cause Analysis (2026-04-15)
+
+Two rounds of parallel agent investigation (6 + 4 independent agents) produced the following findings:
+
+#### Confirmed Root Causes (by importance)
+
+**1. 🔴 FATAL: Observation space missing particle information**
+- Policy obs contains: qpos(7D), qvel(7D), ee_pos(3D), ee_quat(4D), step_frac(1D), q_base(7D) + privileged(7D for M8) = 30-37D
+- **Contains ZERO particle information**: no mean_particle_y, no transfer_frac, no spill_frac
+- Policy is asked to optimize transfer/spill it **cannot observe** — effectively blind
+- Can only learn time-conditioned open-loop correction, not material-adaptive closed-loop control
+- **This is the most fundamental problem. Without fixing this, no amount of reward tuning will help.**
+
+**2. 🔴 FATAL: Reward positive/negative asymmetry**
+- Positive rewards (r_transfer, r_push) are **delta-based** → each particle contributes once
+- Negative rewards (r_spill, r_time, r_approach) are **cumulative per-step** → compound over 500 steps
+- Quantitatively: 1% spill penalty = -2.0 × 0.01 × 500 = **-10.0**, vs 1% transfer reward = 20.0 × 0.01 = **+0.2** → **50:1 asymmetry**
+- Even a perfect scripted trajectory with 32% transfer gets total reward ≈ -83 (spill penalty dominates)
+
+**3. 🟠 SEVERE: residual_scale=0.2 too large**
+- Base trajectory step size: 0.005-0.064 rad/step
+- residual_scale=0.2 gives ±0.2 rad/step → **3x to 40x** the base trajectory magnitude
+- Trained policies learn large residuals that actively destroy the scripted trajectory
+- M8 diagnoser zero-action rollout data was cited but **never actually collected** (diagnose scripts untracked, never executed)
+
+**4. 🟠 SEVERE: Base trajectory missing settle segment**
+- `build_edge_push_trajectory()` = 410 steps (approach + 3 push passes)
+- Horizon = 500 steps → **last 90 steps**: robot frozen at final position
+- No settle phase for particles to fall into target AABB
+- These 90 dead steps accumulate time/spill/approach penalties with zero positive reward
+
+**5. 🟡 MODERATE: Training stability tools missing**
+- No VecNormalize: value network faces raw returns from -741 to +4
+- entropy_coef=0.0: no regularization against early collapse (but use_sde=True provides some exploration)
+- No action penalty: no incentive against large residuals
+
+**6. 🟡 MODERATE: Delta reward introduced with known failure, never validated**
+- Commit 5d620eb (Apr 7) introduced delta reward with message: "reward -38±3, 0% transfer — PPO can't learn"
+- 19 hours later, 500K pipeline launched (1b6a7b7, Apr 8) using the same delta reward
+- Intervening JointResidualWrapper fix (f03a466) validated action space, not reward design
+
+#### Confirmed Non-Issues
+- ❌ Genesis eval env bug — train/eval env configs identical (only seed+1000 and deterministic=True differ)
+- ❌ fe8331c (bowl hooks) — only added bowl mechanics, not reward changes
+- ❌ Task physics fundamentally broken — zero-action achieves some transfer (exact % unverified)
+
+#### Data Integrity Warning
+- m8-diagnoser rollout claims ("zero-action reward=-93, transfer=36.4%") are **unverified**
+  - "-93" actually from M8 seed=0 at 430K steps (trained policy, not zero-action)
+  - "36.4%" has no source data in any evaluations.npz — may be misread from reward -36.43
+  - diagnose_m8_eval_fast.py was never executed (git untracked, no output files)
+- All eval reward numbers from evaluations.npz are verified accurate
+
+#### Required Fixes Before Next Training Run
+
+| Priority | Fix | File | Description |
+|----------|-----|------|-------------|
+| P0 | **Add particle obs** | scoop_transfer.py:get_observations() | Add mean_particle_y, transfer_frac, spill_frac (3D) to obs |
+| P0 | **Restore cumulative reward** | scoop_transfer.py:compute_reward() | Revert to ce5b9e8 coefficients; only modify ~30 lines (preserve bowl fallback + bbox fix) |
+| P0 | **Fix reward asymmetry** | scoop_transfer.py:compute_reward() | Make spill also delta-based, or reduce coefficient to match transfer scale |
+| P0 | **Add settle to trajectory** | joint_residual_wrapper.py:build_edge_push_trajectory() | Append 80-100 static frames at end |
+| P0 | **Reduce residual_scale** | train_baselines.py CLI default | 0.2 → 0.05 |
+| P1 | **Add entropy** | train_teacher.py, train_m7.py | entropy_coef = 0.001 |
+| P2 | **Add VecNormalize** | train_teacher.py | norm_obs=True, norm_reward=False |
+| DROP | ~~Action penalty~~ | — | Redundant with reduced residual_scale |
+
+#### Validation Plan
+1. Kill M8 seed=1 (PID 1842393) — running on defective config
+2. Implement P0 fixes
+3. Run zero-action scripted baseline with reward breakdown (non-RL verification)
+4. If zero-action reward is positive → run 50K M8 seed=42 quick validation
+5. If 50K succeeds → restart full pipeline with corrected config
