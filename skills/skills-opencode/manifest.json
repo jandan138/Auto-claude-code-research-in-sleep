@@ -1,0 +1,257 @@
+{
+  "external_repo_root_dependencies": [
+    "templates/README.md",
+    "templates/RESEARCH_BRIEF_TEMPLATE.md",
+    "templates/EXPERIMENT_PLAN_TEMPLATE.md",
+    "templates/NARRATIVE_REPORT_TEMPLATE.md",
+    "templates/PAPER_PLAN_TEMPLATE.md",
+    "templates/RESEARCH_CONTRACT_TEMPLATE.md",
+    "docs/PROJECT_FILES_GUIDE.md",
+    "docs/SESSION_RECOVERY_GUIDE.md"
+  ],
+  "files": [
+    {
+      "canonical_path": "skills/ablation-planner/SKILL.md",
+      "generated_path": "skills/skills-opencode/ablation-planner/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/analyze-results/SKILL.md",
+      "generated_path": "skills/skills-opencode/analyze-results/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/arxiv/SKILL.md",
+      "generated_path": "skills/skills-opencode/arxiv/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/auto-paper-improvement-loop/SKILL.md",
+      "generated_path": "skills/skills-opencode/auto-paper-improvement-loop/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/auto-review-loop/SKILL.md",
+      "generated_path": "skills/skills-opencode/auto-review-loop/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/auto-review-loop-llm/SKILL.md",
+      "generated_path": "skills/skills-opencode/auto-review-loop-llm/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/auto-review-loop-minimax/SKILL.md",
+      "generated_path": "skills/skills-opencode/auto-review-loop-minimax/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/comm-lit-review/SKILL.md",
+      "generated_path": "skills/skills-opencode/comm-lit-review/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/dse-loop/SKILL.md",
+      "generated_path": "skills/skills-opencode/dse-loop/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/experiment-bridge/SKILL.md",
+      "generated_path": "skills/skills-opencode/experiment-bridge/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/experiment-plan/SKILL.md",
+      "generated_path": "skills/skills-opencode/experiment-plan/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/feishu-notify/SKILL.md",
+      "generated_path": "skills/skills-opencode/feishu-notify/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/formula-derivation/SKILL.md",
+      "generated_path": "skills/skills-opencode/formula-derivation/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/grant-proposal/SKILL.md",
+      "generated_path": "skills/skills-opencode/grant-proposal/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/idea-creator/SKILL.md",
+      "generated_path": "skills/skills-opencode/idea-creator/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/idea-discovery/SKILL.md",
+      "generated_path": "skills/skills-opencode/idea-discovery/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/idea-discovery-robot/SKILL.md",
+      "generated_path": "skills/skills-opencode/idea-discovery-robot/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/mermaid-diagram/SKILL.md",
+      "generated_path": "skills/skills-opencode/mermaid-diagram/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/monitor-experiment/SKILL.md",
+      "generated_path": "skills/skills-opencode/monitor-experiment/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/novelty-check/SKILL.md",
+      "generated_path": "skills/skills-opencode/novelty-check/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/paper-compile/SKILL.md",
+      "generated_path": "skills/skills-opencode/paper-compile/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/paper-figure/SKILL.md",
+      "generated_path": "skills/skills-opencode/paper-figure/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/paper-illustration/SKILL.md",
+      "generated_path": "skills/skills-opencode/paper-illustration/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/paper-plan/SKILL.md",
+      "generated_path": "skills/skills-opencode/paper-plan/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/paper-poster/SKILL.md",
+      "generated_path": "skills/skills-opencode/paper-poster/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/paper-slides/SKILL.md",
+      "generated_path": "skills/skills-opencode/paper-slides/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/paper-write/SKILL.md",
+      "generated_path": "skills/skills-opencode/paper-write/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/paper-writing/SKILL.md",
+      "generated_path": "skills/skills-opencode/paper-writing/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/pixel-art/SKILL.md",
+      "generated_path": "skills/skills-opencode/pixel-art/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/proof-writer/SKILL.md",
+      "generated_path": "skills/skills-opencode/proof-writer/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/rebuttal/SKILL.md",
+      "generated_path": "skills/skills-opencode/rebuttal/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/research-lit/SKILL.md",
+      "generated_path": "skills/skills-opencode/research-lit/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/research-pipeline/SKILL.md",
+      "generated_path": "skills/skills-opencode/research-pipeline/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/research-refine/SKILL.md",
+      "generated_path": "skills/skills-opencode/research-refine/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/research-refine-pipeline/SKILL.md",
+      "generated_path": "skills/skills-opencode/research-refine-pipeline/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/research-review/SKILL.md",
+      "generated_path": "skills/skills-opencode/research-review/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/result-to-claim/SKILL.md",
+      "generated_path": "skills/skills-opencode/result-to-claim/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/run-experiment/SKILL.md",
+      "generated_path": "skills/skills-opencode/run-experiment/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/semantic-scholar/SKILL.md",
+      "generated_path": "skills/skills-opencode/semantic-scholar/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/system-profile/SKILL.md",
+      "generated_path": "skills/skills-opencode/system-profile/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/training-check/SKILL.md",
+      "generated_path": "skills/skills-opencode/training-check/SKILL.md",
+      "kind": "skill"
+    },
+    {
+      "canonical_path": "skills/vast-gpu/SKILL.md",
+      "generated_path": "skills/skills-opencode/vast-gpu/SKILL.md",
+      "kind": "skill"
+    }
+  ],
+  "pack_type": "base",
+  "runtime_assets_included": [
+    "shared-references/citation-discipline.md",
+    "shared-references/venue-checklists.md",
+    "shared-references/writing-principles.md",
+    "paper-write/templates/IEEEtran.bst",
+    "paper-write/templates/IEEEtran.cls",
+    "paper-write/templates/iclr2026.tex",
+    "paper-write/templates/icml2025.tex",
+    "paper-write/templates/ieee_conference.tex",
+    "paper-write/templates/ieee_journal.tex",
+    "paper-write/templates/math_commands.tex",
+    "paper-write/templates/neurips2025.tex"
+  ],
+  "source_root": "skills",
+  "support_asset_roots": [
+    "skills/shared-references",
+    "skills/paper-write/templates"
+  ],
+  "support_assets": [
+    "skills/shared-references/citation-discipline.md",
+    "skills/shared-references/venue-checklists.md",
+    "skills/shared-references/writing-principles.md",
+    "skills/paper-write/templates/IEEEtran.bst",
+    "skills/paper-write/templates/IEEEtran.cls",
+    "skills/paper-write/templates/iclr2026.tex",
+    "skills/paper-write/templates/icml2025.tex",
+    "skills/paper-write/templates/ieee_conference.tex",
+    "skills/paper-write/templates/ieee_journal.tex",
+    "skills/paper-write/templates/math_commands.tex",
+    "skills/paper-write/templates/neurips2025.tex"
+  ],
+  "target_root": "skills/skills-opencode"
+}

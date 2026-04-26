@@ -1,0 +1,66 @@
+{
+  "files": [
+    {
+      "base_generated_path": "skills/skills-opencode/research-review/SKILL.md",
+      "canonical_path": "skills/research-review/SKILL.md",
+      "classification": "direct_reviewer_consumer",
+      "kind": "skill",
+      "override_path": "skills/skills-opencode-claude-review/research-review/SKILL.md"
+    },
+    {
+      "base_generated_path": "skills/skills-opencode/novelty-check/SKILL.md",
+      "canonical_path": "skills/novelty-check/SKILL.md",
+      "classification": "direct_reviewer_consumer",
+      "kind": "skill",
+      "override_path": "skills/skills-opencode-claude-review/novelty-check/SKILL.md"
+    },
+    {
+      "base_generated_path": "skills/skills-opencode/research-refine/SKILL.md",
+      "canonical_path": "skills/research-refine/SKILL.md",
+      "classification": "direct_reviewer_consumer",
+      "kind": "skill",
+      "override_path": "skills/skills-opencode-claude-review/research-refine/SKILL.md"
+    },
+    {
+      "base_generated_path": "skills/skills-opencode/auto-review-loop/SKILL.md",
+      "canonical_path": "skills/auto-review-loop/SKILL.md",
+      "classification": "direct_reviewer_consumer",
+      "kind": "skill",
+      "override_path": "skills/skills-opencode-claude-review/auto-review-loop/SKILL.md"
+    },
+    {
+      "base_generated_path": "skills/skills-opencode/paper-plan/SKILL.md",
+      "canonical_path": "skills/paper-plan/SKILL.md",
+      "classification": "direct_reviewer_consumer",
+      "kind": "skill",
+      "override_path": "skills/skills-opencode-claude-review/paper-plan/SKILL.md"
+    },
+    {
+      "base_generated_path": "skills/skills-opencode/paper-figure/SKILL.md",
+      "canonical_path": "skills/paper-figure/SKILL.md",
+      "classification": "direct_reviewer_consumer",
+      "kind": "skill",
+      "override_path": "skills/skills-opencode-claude-review/paper-figure/SKILL.md"
+    },
+    {
+      "base_generated_path": "skills/skills-opencode/paper-write/SKILL.md",
+      "canonical_path": "skills/paper-write/SKILL.md",
+      "classification": "direct_reviewer_consumer",
+      "kind": "skill",
+      "override_path": "skills/skills-opencode-claude-review/paper-write/SKILL.md"
+    },
+    {
+      "base_generated_path": "skills/skills-opencode/auto-paper-improvement-loop/SKILL.md",
+      "canonical_path": "skills/auto-paper-improvement-loop/SKILL.md",
+      "classification": "direct_reviewer_consumer",
+      "kind": "skill",
+      "override_path": "skills/skills-opencode-claude-review/auto-paper-improvement-loop/SKILL.md"
+    }
+  ],
+  "overlay_depends_on": "skills/skills-opencode",
+  "pack_type": "overlay",
+  "runtime_assets_included": [],
+  "source_pack": "skills/skills-opencode",
+  "support_assets": [],
+  "target_root": "skills/skills-opencode-claude-review"
+}
