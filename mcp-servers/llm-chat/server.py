@@ -29,6 +29,7 @@ API_KEY = os.environ.get("LLM_API_KEY", "")
 BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
 DEFAULT_MODEL = os.environ.get("LLM_MODEL", "gpt-4o")
 SERVER_NAME = os.environ.get("LLM_SERVER_NAME", "llm-chat")
+DEFAULT_REASONING_EFFORT = os.environ.get("LLM_REASONING_EFFORT", "high")
 
 # Debug logging
 DEBUG_LOG = os.path.join(tempfile.gettempdir(), f"{SERVER_NAME}-mcp-debug.log")
@@ -71,7 +72,7 @@ def send_response(response):
     sys.stdout.write(output)
     sys.stdout.flush()
 
-def call_llm(messages, model=None):
+def call_llm(messages, model=None, reasoning_effort=None):
     """Call LLM Chat Completions API"""
     if not API_KEY:
         return None, "LLM_API_KEY environment variable not set"
@@ -86,6 +87,8 @@ def call_llm(messages, model=None):
         "messages": messages,
         "max_tokens": 4096
     }
+    if reasoning_effort:
+        payload["reasoning_effort"] = reasoning_effort
 
     debug_log(f"Calling LLM API: {url}")
 
@@ -159,6 +162,11 @@ def handle_request(request):
                             "system": {
                                 "type": "string",
                                 "description": "Optional system prompt"
+                            },
+                            "reasoning_effort": {
+                                "type": "string",
+                                "description": "Reasoning effort level: low, medium, high (default: high)",
+                                "enum": ["low", "medium", "high"]
                             }
                         },
                         "required": ["prompt"]
@@ -175,14 +183,15 @@ def handle_request(request):
             prompt = arguments.get("prompt", "")
             model = arguments.get("model", DEFAULT_MODEL)
             system = arguments.get("system", "")
+            reasoning_effort = arguments.get("reasoning_effort", DEFAULT_REASONING_EFFORT)
 
             messages = []
             if system:
                 messages.append({"role": "system", "content": system})
             messages.append({"role": "user", "content": prompt})
 
-            debug_log(f"Tool call: chat, prompt length: {len(prompt)}")
-            content, error = call_llm(messages, model)
+            debug_log(f"Tool call: chat, prompt length: {len(prompt)}, reasoning_effort: {reasoning_effort}")
+            content, error = call_llm(messages, model, reasoning_effort)
 
             if error:
                 return {
