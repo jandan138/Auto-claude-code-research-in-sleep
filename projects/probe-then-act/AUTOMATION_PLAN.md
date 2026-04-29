@@ -4,11 +4,12 @@
 > **Paper:** "Probe-Then-Act: Active Tactile System Identification for Robust Cross-Material Robot Tool Use in Multi-Physics Simulation"
 > **Target venue:** IEEE T-RL (deadline 2026-04-30)
 > **Start date:** 2026-04-03
-> **Current date:** 2026-04-26 (Day 23 of 27)
-> **Remaining:** 4 days
+> **Current date:** 2026-04-29 (Day 26 of 27)
+> **Remaining:** 1 day
 >
 > **Revised 2026-04-15:** 500K baselines FAILED. Root cause diagnosed (obs missing particles, reward asymmetry, residual too large). Plan revised for hotfix → re-validate → retrain path.
 > **Revised 2026-04-26:** Gate 4 has been promoted and formal M1/M7 training completed. Corrected OOD evaluation completed after resumable recovery, but result-to-claim found the original broad PTA claims unsupported. The selected next direction is Option 1, ablation-first diagnosis, before paper writing.
+> **Revised 2026-04-29:** Ablation OOD completed and result-to-claim again rejects broad PTA robustness. Automatic execution should stop/pivot unless a new explicit salvage hypothesis is chosen.
 
 ---
 
@@ -20,7 +21,7 @@ A robot learning method paper: the robot performs short active probing actions t
 
 ---
 
-## Current Status (Day 23)
+## Current Status (Day 26)
 
 | Item | Status |
 |---|---|
@@ -34,16 +35,17 @@ A robot learning method paper: the robot performs short active probing actions t
 | Gate 4 | **PASSED** — post-hotfix reruns reached 100% success and ~0.399 transfer |
 | Core method | **IMPLEMENTED** (LatentBeliefEncoder, ProbePhaseWrapper, train_m7.py) |
 | 500K baselines | **COMPLETE** — M1 3 seeds, M7 3 seeds, M8 seed=42 available |
-| Corrected OOD eval | **COMPLETE** — 35/35 rows, result-to-claim negative |
-| DLC acceleration | **READY FOR DSW DRY-RUN** — executable layer lives in probe repo only |
+| Corrected OOD eval | **COMPLETE** — 35/35 initial rows, result-to-claim negative |
+| Ablation OOD eval | **COMPLETE** — 65 per-seed rows, 25 aggregate rows, post-ablation result-to-claim negative |
+| DLC acceleration | **USED FOR ABLATION HANDOFF** — executable layer lives in probe repo only |
 
-### Day 23 OOD Blocker Resolved; Current Research Blocker
+### Day 26 Ablation Gate Complete; Current Research Blocker
 
 Corrected OOD eval was stuck in a cron restart loop. Episode-level NaN handling worked, but long Genesis eval processes were being OOM-killed at roughly 12 GB RSS before `run_ood_eval_v2.py` reached its final CSV write. The evaluator now persists each completed `(method, seed, split)` row immediately and refreshes aggregate results, so OOM restarts preserve progress.
 
-**Automatic research decision:** Option 1 selected. Do not proceed to paper writing. Run ablation-first diagnosis (`m7_noprobe`, `m7_nobelief`) and only retain PTA claims if the mechanism can be repaired or narrowed.
+**Automatic research decision:** Option 1 completed and failed its go/no-go gate. Do not proceed to paper writing, M2/RNN, M6/uncertainty, or elastoplastic expansion automatically.
 
-**Current blocker:** broad Probe-Then-Act claims are not supported by corrected OOD v2. The next evidence gate is ablation OOD, not paper writing.
+**Current blocker:** broad Probe-Then-Act claims are not supported after ablations. The next step is a human pivot decision, not more automatic compute.
 
 **Plans and runbooks:**
 - `/home/zhuzihou/dev/probe-then-act/.worktrees/aris-resume-stage-d/refine-logs/EXPERIMENT_PLAN.md`
@@ -86,7 +88,7 @@ Corrected OOD eval was stuck in a cron restart loop. Episode-level NaN handling 
 ### Candidate Paper Claims
 1. "Fixed manipulation strategy varies by 55pp across materials" — Config D data.
 2. "Cross-material Genesis MPM benchmark" — benchmark contribution.
-3. "Active probing enables material-adaptive control" — currently blocked because corrected OOD v2 shows M7 does not beat M1 broadly; only retain a narrowed version if ablations repair or explain the mechanism.
+3. "Active probing enables material-adaptive control" — rejected for the current method as a broad OOD claim; only a narrow, explicitly re-approved dynamics-adaptation salvage path remains possible.
 
 ---
 
@@ -131,7 +133,7 @@ python pta/scripts/train_m7.py --seed 42 --total-timesteps 500000
 python pta/scripts/run_ood_eval_v2.py
 ```
 
-Current status: M7 training and corrected OOD evaluation are complete. Result-to-claim is negative for the original broad PTA claims, so the next phase is ablation-first diagnosis.
+Current status: M7 training, corrected OOD evaluation, ablation training, and ablation OOD evaluation are complete. Result-to-claim remains negative for the original broad PTA claims.
 
 ### Phase 5 — Days 20-22: Ablation-First Diagnosis
 
@@ -154,10 +156,9 @@ python pta/scripts/dlc/submit_jobs.py --suite ablation --variants no_belief --se
 python pta/scripts/dlc/submit_jobs.py --suite ood-ablation
 ```
 
-Do not submit `m7_noprobe seed=42` to DLC while local R001 is still running
-unless that local run is explicitly abandoned or isolated.
+This phase is now complete: R001 ran locally, R002-R006 came from the DLC handoff, and R007 ablation OOD completed locally.
 
-After these six checkpoints exist, rerun corrected resumable OOD v2 and run result-to-claim again before any paper-facing claim.
+Post-ablation result-to-claim verdict: `claim_supported=no` for broad PTA robustness. The default route is stop/pivot.
 
 ### Phase 6 — Days 22-27: Conditional `/paper-writing` + Submission
 
@@ -165,8 +166,7 @@ After these six checkpoints exist, rerun corrected resumable OOD v2 and run resu
 /paper-writing "NARRATIVE_REPORT.md" — venue: IEEE_JOURNAL, human checkpoint: true
 ```
 
-Only enter this phase if ablation result-to-claim supports a narrowed,
-defensible PTA mechanism claim.
+Do not enter this phase for the current PTA robustness story. Only revive paper-writing after a new explicit claim is supported by new evidence.
 
 ---
 
@@ -178,8 +178,8 @@ defensible PTA mechanism claim.
 | OOD-Material: Snow | ✓ (3 seeds) | ✓ (3 seeds) | ✓ (1 seed) |
 | OOD-Material: EP | ✓ (3 seeds) | ✓ (3 seeds) | ✓ (1 seed) |
 | OOD-Params: Sand-extreme | ✓ (3 seeds) | ✓ (3 seeds) | — |
-| **Ablation: No-Probe** | — | running/schedulable (3 seeds) | — |
-| **Ablation: No-Belief** | — | schedulable (3 seeds) | — |
+| **Ablation: No-Probe** | — | complete (3 seeds) | — |
+| **Ablation: No-Belief** | — | complete (3 seeds) | — |
 
 Total runs: ~30 (vs. original ~300+)
 
@@ -190,30 +190,30 @@ Total runs: ~30 (vs. original ~300+)
 ```
 Day 23:     corrected OOD + result-to-claim (negative)
                ↓
-Now:        R001 local m7_noprobe seed=42 is running
+Day 24-25:  ablation training via local + DLC handoff
                ↓
-DSW/DLC:    optional smoke + remaining ablation train jobs
+Day 26:     corrected OOD with m7_noprobe/m7_nobelief complete
                ↓
-Next:       corrected OOD with m7_noprobe/m7_nobelief
+Gate:       result-to-claim again negative
                ↓
-Gate:       result-to-claim again before any paper writing
+Now:        stop/pivot; require explicit salvage hypothesis before more compute
 ```
 
-The deadline buffer is now dominated by compute availability and ablation interpretation, not the old hotfix gate.
+The deadline buffer is now dominated by whether to stop, write a negative diagnostic, or invent a new method; the current broad PTA paper path is closed.
 
 ---
 
-## Risk Register (Updated Day 23)
+## Risk Register (Updated Day 26)
 
 | Risk | Impact | Probability | Mitigation |
 |---|---|---|---|
 | **Hotfix doesn't help (50K still fails)** | Blocks all | **Resolved** | Gate 4 promoted |
 | **OOD eval OOM restart loop** | Blocks result-to-claim | **Resolved** | Resumable OOD completed `35/35` rows |
-| Belief encoder doesn't help (M7 worse than M1 on most splits) | Blocks paper claims | High | Run `m7_noprobe` / `m7_nobelief`; pivot if mechanism is not salvageable |
-| 15-day timeline too tight post-setback | Miss deadline | High | Start outline Day 18; use ARIS `/paper-writing` pipeline |
+| Belief encoder doesn't help (M7 worse than M1 on most splits) | Blocks paper claims | Realized | Ablations failed to salvage broad robustness; pivot required |
+| 15-day timeline too tight post-setback | Miss deadline | Realized | Do not start `/paper-writing` without a new supported claim |
 | Core method implementation > 5 days | N/A | **RESOLVED** — M7 implemented Day 5 |
-| Training too slow for 3-seed sweeps | Delays eval | Medium | Use PAI-DLC from DSW for parallel ablation workers |
-| Duplicate local/DLC ablation submission | Wastes GPU and confuses tracking | Medium | Keep R001 local; submit only missing seeds or isolate result roots |
+| Training too slow for 3-seed sweeps | Delays eval | Resolved for ablations | Use PAI-DLC only for bounded future worker jobs if a new hypothesis is approved |
+| Duplicate local/DLC ablation submission | Wastes GPU and confuses tracking | Resolved for R001-R007 | Keep local cron paused unless explicitly re-enabled |
 
 ---
 
@@ -224,8 +224,8 @@ The deadline buffer is now dominated by compute availability and ablation interp
 | `RESEARCH_BRIEF.md` | 0 | DONE |
 | `CLAUDE.md` | 1 | DONE |
 | `docs/20_planning/09_NEXT_STEPS_PLAN.md` | 3 | DONE (revised plan) |
-| `results/main_results.csv` | 5 | COMPLETE for corrected OOD v2; refresh after ablation OOD |
-| `NARRATIVE_REPORT.md` | 7 | TODO (after eval) |
+| `results/main_results.csv` | 5 | COMPLETE for corrected OOD v2 plus ablation OOD (`25` aggregate rows) |
+| `NARRATIVE_REPORT.md` | 7 | BLOCKED by negative result-to-claim unless pivoting to a failure-analysis report |
 
 ---
 

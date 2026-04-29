@@ -220,6 +220,15 @@ Working interpretation: the local automation layer is now active and has success
 - DLC workers are restricted to bounded `smoke_env`, `train_ablation`, and `eval_ood` commands. Do not run cron, ARIS, opencode, Claude, Codex, or Auto-repo orchestration inside DLC.
 - Because R001 is already running locally, the recommended DSW submission route is: smoke first, then `m7_noprobe` seeds `0/1`, then `m7_nobelief` seeds `42/0/1`; avoid duplicating `m7_noprobe seed=42` unless the local run is abandoned or isolated.
 
+### 2026-04-29 Ablation OOD Result-to-Claim — Broad PTA Claim Rejected
+
+- Ablation OOD completed with `65` per-seed rows and `25` aggregate rows in the probe worktree result CSVs.
+- Evaluated ablations: `m7_noprobe` and `m7_nobelief`, seeds `42/0/1`, same corrected OOD v2 splits, residual scale `0.05`, final 500K checkpoints.
+- All failed episode counts are `0`; the verdict is about policy behavior, not simulator crash handling.
+- All-OOD average deltas vs M1: M7 full transfer `-0.0858`, spill `+0.0894`; no-probe transfer `-0.2733`, spill `+0.1365`; no-belief transfer `-0.1279`, spill `+0.0693`.
+- Result-to-claim verdict: `claim_supported=no` for broad Probe-Then-Act robustness. Ablations support only metric-scoped internal-mechanism statements: probe helps relative to `m7_noprobe`, and belief helps transfer/success relative to `m7_nobelief` but not all-OOD spill.
+- Automatic route changed to **stop/pivot**: do not launch M2/RNN, uncertainty/M6, elastoplastic expansion, or paper-writing unless a new explicit salvage hypothesis is approved.
+
 ## Phase 4: M1 Pivot — Edge-Push Task Redesign
 
 > **Canonical plan**: `refine-logs/M1_FAILED_PIVOT_PLAN.md`
